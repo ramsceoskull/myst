@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="anti_flash_white">#FFECECEC</color>
+    <color name="pomp_and_power">#FF8270AA</color>
+    <color name="tekhelet">#FF4F338A</color>
+    <color name="raisin_black">#FF181421</color>
+
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
