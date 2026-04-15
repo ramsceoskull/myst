@@ -1,5 +1,7 @@
 package com.tenko.myst.ui.screen
 
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,10 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Help
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -28,7 +26,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +41,7 @@ import coil.compose.AsyncImage
 import com.tenko.myst.R
 import com.tenko.myst.data.serializable.UserResponse
 import com.tenko.myst.data.view.AuthViewModel
+import com.tenko.myst.data.view.ProfilePictureViewModel
 import com.tenko.myst.navigation.AppScreens
 import com.tenko.myst.ui.components.ActionCard
 import com.tenko.myst.ui.components.AppTopBar
@@ -54,11 +54,10 @@ import com.tenko.myst.ui.theme.Tekhelet
 import com.tenko.myst.ui.theme.White
 
 @Composable
-fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel) {
-    LaunchedEffect(Unit) {
-        authViewModel.getUser()
-    }
+fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel, profileViewModel: ProfilePictureViewModel) {
+    authViewModel.getUser(navController)
     val user = authViewModel.currentUser
+    val photoUri by profileViewModel.photoUri.collectAsState()
 
     Scaffold(
         topBar = {
@@ -71,7 +70,8 @@ fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel) {
                         Icon(
                             painter = painterResource(R.drawable.ellipsis_vertical_solid_full),
                             contentDescription = "More options",
-                            tint = Tekhelet
+                            tint = Tekhelet,
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 }
@@ -93,7 +93,7 @@ fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel) {
         ) {
             Spacer(modifier = Modifier.height(30.dp))
 
-            ProfileSection(user)
+            ProfileSection(user, photoUri)
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -101,10 +101,10 @@ fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            MenuItem("Report History", Icons.Default.PictureAsPdf)
-            MenuItem("Clinical History", Icons.Default.Folder)
-            MenuItem("Help", Icons.Default.Help)
-            MenuItem("Editar Perfil", Icons.Default.Settings) {
+            MenuItem("Report History", R.drawable.file_pdf_solid_full)
+            MenuItem("Clinical History", R.drawable.folder_open_solid_full)
+            MenuItem("Help", R.drawable.circle_question_solid_full)
+            MenuItem("Editar Perfil", R.drawable.gear_solid_full) {
                     navController.navigate(AppScreens.UpdateProfileScreen.route)
             }
 
@@ -114,16 +114,26 @@ fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel) {
 }
 
 @Composable
-fun ProfileSection(user: UserResponse?) {
+fun ProfileSection(user: UserResponse?, photoUri: Uri?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        AsyncImage(
-            model = "https://picsum.photos/400",
-            contentDescription = "Profile Picture",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(200.dp)
-                .clip(CircleShape)
-        )
+        if(photoUri == null)
+            Image(
+                painter = painterResource(R.drawable.profile_picture_placeholder),
+                contentDescription = "Profile Picture",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(CircleShape)
+            )
+        else
+            AsyncImage(
+                model = photoUri.toString(),
+                contentDescription = "Profile Picture",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(CircleShape)
+            )
 
         Spacer(modifier = Modifier.height(16.dp))
 
