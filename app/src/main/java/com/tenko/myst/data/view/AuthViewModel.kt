@@ -32,7 +32,6 @@ import kotlinx.coroutines.launch
 class AuthViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
     var loginError by mutableStateOf<String?>(null)
-    var tokenData by mutableStateOf<Token?>(null)
     var currentUser by mutableStateOf<UserResponse?>(null)
         private set
 
@@ -44,14 +43,14 @@ class AuthViewModel : ViewModel() {
                 val response = ApiClient.client.submitForm(
                     url = "https://api-myst.onrender.com/auth/login",
                     formParameters = parameters {
-                        append("username", email.trim())
-                        append("password", password.trim())
+                        append("username", email)
+                        append("password", password)
                     }
                 )
 
                 if (response.status == HttpStatusCode.OK) {
-                    tokenData = response.body<Token>()
-                    tokenManager.saveToken(tokenData!!.access_token)
+                    val tokenData = response.body<Token>()
+                    tokenManager.saveToken(tokenData.access_token)
                     ApiClient.clearAuthCache()
                     fetchUserData(navController)
                     // Aquí guardarías el token (ej. en SharedPreferences o DataStore)
@@ -61,7 +60,7 @@ class AuthViewModel : ViewModel() {
             } catch (e: Exception) {
                 loginError = "Error de conexión: ${e.localizedMessage}"
             } finally {
-                print("Token guardado: ${tokenData!!.access_token}")
+//                print("Token guardado: ${tokenData!!.access_token}")
                 isLoading = false
             }
         }
@@ -78,6 +77,17 @@ class AuthViewModel : ViewModel() {
             }
         } catch (e: Exception) {
             println("Error cargando usuario: ${e.message}")
+        }
+    }
+
+    private fun handleUnauthorized(navController: NavController) {
+        viewModelScope.launch {
+            // Limpiamos el estado local
+            currentUser = null
+            // Redirigimos al Login y limpiamos el stack de navegación
+            navController.navigate(AppScreens.LoginScreen.route) {
+                popUpTo(0)
+            }
         }
     }
 
@@ -168,7 +178,7 @@ class AuthViewModel : ViewModel() {
                 if (response.status == HttpStatusCode.Created) {
                     // Registro exitoso. El usuario ahora debe revisar su correo.
                     // Podrías navegar a una pantalla de "Revisa tu correo"
-                    navController.navigate(AppScreens.ValidateEmailScreen.route)
+                    navController.navigate("${AppScreens.ValidateEmailScreen.route}/${userData.email}")
                 } else {
                     // Manejar errores como "Email already registered"
                     loginError = "El correo ya está registrado o los datos son inválidos"
@@ -181,15 +191,25 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun getUser(){
+    fun getUser(navController: NavController) {
         viewModelScope.launch {
             isLoading = true
             try {
                 val response = ApiClient.client.get("https://api-myst.onrender.com/users/me")
-                if (response.status == HttpStatusCode.OK) {
-                    currentUser = response.body<UserResponse>()
-                    // Aquí puedes guardar el perfil en una variable de estado
-                    println("Usuario obtenido: ${currentUser?.name}")
+                when (response.status) {
+                    HttpStatusCode.OK -> {
+                        // Aquí se guarda el perfil en una variable de estado
+                        currentUser = response.body<UserResponse>()
+                        println("Usuario obtenido: ${currentUser?.name}")
+                    }
+                    HttpStatusCode.Unauthorized -> {
+                        // Si el token es inválido o ha expirado, manejamos la situación
+                        println("Token inválido o expirado. Redirigiendo al login.")
+                        handleUnauthorized(navController)
+                    }
+                    else -> {
+                        loginError = "Error al obtener perfil: ${response.status.description}"
+                    }
                 }
             } catch (e: Exception) {
                 loginError = "Error al obtener perfil: ${e.localizedMessage}"
@@ -223,27 +243,24 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             try {
+                // Preparamos el objeto ANTES de la petición para ver si falla aquí
+                val userDeleteObj = UserDelete(password = passwordConfirm)
+
                 val response = ApiClient.client.delete("https://api-myst.onrender.com/users/me") {
                     contentType(ContentType.Application.Json)
-                    setBody(UserDelete(password = passwordConfirm))
+                    setBody(userDeleteObj)
                 }
 
-                if (response.status == HttpStatusCode.NoContent) {
-                    // 1. Borramos el token del celular
+                if (response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.OK) {
                     tokenManager.deleteToken()
-
-                    // 2. Limpiamos el estado del usuario en el ViewModel
+                    ApiClient.clearAuthCache()
                     currentUser = null
-
-                    // Borrado exitoso, regresamos al inicio
                     navController.navigate(AppScreens.LoginScreen.route) {
-                        popUpTo(0) // Limpia el historial de navegación
+                        popUpTo(0)
                     }
-                } else if (response.status == HttpStatusCode.BadRequest) {
-                    loginError = "Contraseña incorrecta"
                 }
             } catch (e: Exception) {
-                loginError = "Error: ${e.localizedMessage}"
+                e.printStackTrace()
             } finally {
                 isLoading = false
             }
