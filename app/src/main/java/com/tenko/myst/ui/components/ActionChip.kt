@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ActionChip(
@@ -19,13 +20,14 @@ fun ActionChip(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         color = backgroundColor,
         tonalElevation = 4.dp
     ) {
         Text(
             text = text,
             color = contentColor,
+            fontSize = 16.sp,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
