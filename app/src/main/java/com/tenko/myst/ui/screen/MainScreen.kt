@@ -29,12 +29,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tenko.myst.R
 import com.tenko.myst.data.model.Medicine
 import com.tenko.myst.data.model.MedicineStatus
+import com.tenko.myst.data.view.AuthViewModel
 import com.tenko.myst.data.view.MedicineViewModel
 import com.tenko.myst.data.view.NotificationViewModel
+import com.tenko.myst.data.view.ProfilePictureViewModel
 import com.tenko.myst.navigation.AppScreens
 import com.tenko.myst.ui.components.AddMedicationButton
 import com.tenko.myst.ui.components.AppTopBar
@@ -52,7 +55,8 @@ import com.tenko.myst.ui.theme.White
 fun MainScreen(
     navController: NavController,
     notificationViewModel: NotificationViewModel,
-    medicineViewModel: MedicineViewModel
+    medicineViewModel: MedicineViewModel,
+    authViewModel: AuthViewModel = viewModel()
 ) {
 //    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -69,16 +73,12 @@ fun MainScreen(
                 navController = navController,
                 scrollBehavior = scrollBehavior,
                 notificationViewModel = notificationViewModel,
+                authViewModel = authViewModel,
                 actions = { showNotifications = !showNotifications }
             )
         },
         bottomBar = { BottomNavigationBar(navController) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate(AppScreens.AddMedicationScreen.route) },
-                containerColor = PompAndPower
-            ) { AddMedicationButton() }
-        },
+        floatingActionButton = { AddMedicationButton(onClick = { navController.navigate(AppScreens.AddMedicationScreen.route) }) },
         containerColor = White,
     ) { padding ->
         Box {
