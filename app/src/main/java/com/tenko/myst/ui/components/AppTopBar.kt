@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,9 +37,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.tenko.myst.R
 import com.tenko.myst.data.model.Quote
+import com.tenko.myst.data.view.AuthViewModel
 import com.tenko.myst.data.view.NotificationViewModel
 import com.tenko.myst.navigation.AppScreens
 import com.tenko.myst.ui.theme.AntiFlashWhite
@@ -121,9 +122,12 @@ fun AppTopBar(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
     notificationViewModel: NotificationViewModel,
+    authViewModel: AuthViewModel = viewModel(),
     actions: () -> Unit
 ) {
+    authViewModel.getUser(navController)
     val hasUnread = notificationViewModel.hasUnread
+    val user = authViewModel.currentUser
 
     Surface(
         shadowElevation = 4.dp,
@@ -146,14 +150,20 @@ fun AppTopBar(
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .size(40.dp)
-                        .clip(CircleShape)
-                ) {
-                    Image(
-                        contentScale = ContentScale.Crop,
-                        contentDescription = "Foto de perfil",
-                        painter = painterResource(R.drawable.mujer4)
-                    )
-                }
+                        .clip(CircleShape),
+                    content = {
+                        AsyncImage(
+                            model = user?.picture,
+                            contentDescription = "Profile Photo",
+                            modifier = Modifier
+                                .size(150.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.profile_picture_placeholder),
+                            error = painterResource(R.drawable.profile_picture_placeholder)
+                        )
+                    }
+                )
             },
             actions = {
                 IconButton(onClick = actions, modifier = Modifier.padding(end = 8.dp)) {
