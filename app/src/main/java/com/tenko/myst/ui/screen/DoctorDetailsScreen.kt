@@ -113,7 +113,7 @@ fun DoctorHeader(doctor: Doctor) {
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
+        /*Image(
             painter = painterResource(doctor.imageRes),
             contentDescription = "Doctor Image",
             contentScale = ContentScale.Crop,
@@ -124,7 +124,7 @@ fun DoctorHeader(doctor: Doctor) {
                     color = AntiFlashWhite,
                     shape = RoundedCornerShape(16.dp)
                 )
-        )
+        )*/
 
         Spacer(modifier = Modifier.width(16.dp))
 
@@ -135,12 +135,12 @@ fun DoctorHeader(doctor: Doctor) {
                 fontWeight = FontWeight.SemiBold
             )
 
-            Text(
+            /*Text(
                 text = doctor.subtitle,
                 color = SweetGrey,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
-            )
+            )*/
 
             Spacer(modifier = Modifier.height(16.dp))
 
