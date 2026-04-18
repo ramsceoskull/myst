@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -29,23 +27,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
-import com.tenko.myst.R
 import com.tenko.myst.data.model.CalendarEvent
-import com.tenko.myst.data.model.CycleEvent
+import com.tenko.myst.ui.components.AddCalendarEvent
 import com.tenko.myst.ui.components.AppTopBar
+import com.tenko.myst.ui.components.BottomNavigationBar
 import com.tenko.myst.ui.components.DayBottomSheet
-import com.tenko.myst.ui.components.DayCellPro
-import com.tenko.myst.ui.components.DayEditorSheet
-import com.tenko.myst.ui.theme.PompAndPower
 import com.tenko.myst.ui.theme.White
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -78,19 +71,10 @@ fun CalendarScreen(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() }
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {},
-                containerColor = PompAndPower
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.plus_solid_full),
-                    contentDescription = "Registrar síntoma",
-                    Modifier.size(24.dp),
-                    tint = White
-                )
-            }
+        bottomBar = {
+            BottomNavigationBar(navController)
         },
+        floatingActionButton = { AddCalendarEvent({}) },
         floatingActionButtonPosition = FabPosition.End,
         containerColor = White,
     ) { padding ->
