@@ -1,24 +1,20 @@
 package com.tenko.myst.ui.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,25 +22,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.tenko.myst.R
-import com.tenko.myst.data.model.ChatMessage
-import com.tenko.myst.ui.components.AppTopBar
-import com.tenko.myst.ui.components.BottomNavigationBar
-import com.tenko.myst.ui.components.ChatBubble
-import com.tenko.myst.ui.components.MessageBubble
-import com.tenko.myst.ui.components.MessageInput
-import com.tenko.myst.ui.theme.SweetGrey
 import com.tenko.myst.data.view.ChatViewModel
+import com.tenko.myst.ui.components.AnswerSelector
+import com.tenko.myst.ui.components.AppTopBar
+import com.tenko.myst.ui.components.BottomBar
+import com.tenko.myst.ui.components.ChatBubble
+import com.tenko.myst.ui.components.TypingIndicator
+import com.tenko.myst.ui.theme.SweetGrey
+import com.tenko.myst.ui.theme.Tekhelet
+import com.tenko.myst.ui.theme.White
 
 
 @Composable
@@ -52,12 +43,15 @@ fun ChatScreen(navController: NavHostController, viewModel: ChatViewModel = view
     val messages by viewModel.messages.collectAsState()
     val isTyping by viewModel.isTyping.collectAsState()
 
-    val lightGray = Color(0xFFF2F2F2)
+    val lastMessage = viewModel.messages.collectAsState().value.lastOrNull()
+    var showInputPrompt = false
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(messages.size) {
-        listState.animateScrollToItem(messages.size)
+    LaunchedEffect(messages.size, isTyping) {
+        listState.animateScrollToItem(
+            index = messages.size + if (isTyping) 1 else 0
+        )
     }
 
     Scaffold(
@@ -74,122 +68,70 @@ fun ChatScreen(navController: NavHostController, viewModel: ChatViewModel = view
             }
         },
         bottomBar = {
-            BottomNavigationBar(navController)
+            if(viewModel.isQuestionnaireMode && lastMessage?.questionRef != null) {
+                AnswerSelector(lastMessage.questionRef) { answer ->
+                    viewModel.sendMessage(answer)
+                }
+            } else if(showInputPrompt) {
+                BottomBar({ viewModel.sendMessage(it) })
+            }
         },
-        containerColor = lightGray
+        containerColor = Color(0xFFF2F2F2)
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            WelcomeSection()
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            ChatBubble()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ChatIndicator()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MessageInput()
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        /*Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(16.dp)
+                modifier = Modifier.weight(1f)
             ) {
-                items(messages, key = { it.id }) { message ->
-                    AnimatedMessageBubble(message)
+                items(messages) { message ->
+                    ChatBubble(message, navController)
                 }
 
-                if (isTyping) {
-                    item {
-                        TypingIndicator()
+                item {
+                    Box(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                        if(viewModel.messages.collectAsState().value.size == 2) {
+                            showInputPrompt = true
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedButton(
+                                    onClick = { viewModel.sendMessage("Modificar historial")},
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Tekhelet,
+                                        contentColor = White,
+                                    ),
+//                                    border = BorderStroke(2.dp, Tekhelet),
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                                ) {
+                                    Text("Actualizar historial")
+                                }
+                                OutlinedButton(
+                                    onClick = { viewModel.sendMessage("Daily log") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Tekhelet,
+                                        contentColor = White,
+                                    ),
+//                                    border = BorderStroke(2.dp, Tekhelet),
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                                ) {
+                                    Text("Mi día")
+                                }
+                            }
+                        }
                     }
+
+                    if(isTyping)
+                        TypingIndicator()
                 }
             }
-            MessageInput { text ->
-                viewModel.sendMessage(text)
-            }
-        }*/
-    }
-}
-
-@Composable
-fun AnimatedMessageBubble(message: ChatMessage) {
-    AnimatedVisibility(
-        visible = true,
-        enter = fadeIn() + slideInVertically { it / 2 }
-    ) {
-        MessageBubble(message)
-    }
-}
-
-@Composable
-fun WelcomeSection() {
-    Row(verticalAlignment = Alignment.Top) {
-        Image(
-            painter = painterResource(R.drawable.tenko_avatar),
-            contentDescription = null,
-            modifier = Modifier.size(120.dp)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column {
-
-            Text(
-                "🌸 ¡Hola! Me alegra verte por aquí.",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                "Estoy aquí para escucharte y ayudarte a registrar cómo te sientes hoy.",
-                fontSize = 14.sp,
-                color = Color.DarkGray
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                "Cuéntame, ¿cómo te encuentras? 💕",
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun ChatIndicator() {
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        repeat(3) {
-            Box(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray)
-            )
         }
     }
 }
