@@ -5,6 +5,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.tenko.myst.ui.components.BottomNavItem
 import com.tenko.myst.ui.theme.PompAndPower
 import com.tenko.myst.ui.theme.Tekhelet
 import com.tenko.myst.ui.theme.White
@@ -25,8 +25,8 @@ import com.tenko.myst.ui.theme.White
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem.Calendar,
-        BottomNavItem.Chat,
-        BottomNavItem.Profile
+        BottomNavItem.Home,
+        BottomNavItem.Chat
     )
 
     Surface(
@@ -58,7 +58,6 @@ fun BottomNavigationBar(navController: NavController) {
                         Icon(
                             painter = painterResource(item.icon),
                             contentDescription = item.label,
-                            tint = if (currentRoute == item.route) Tekhelet else PompAndPower.copy(alpha = 0.7f),
                             modifier = Modifier.size(30.dp)
                         )
                     },
@@ -66,10 +65,16 @@ fun BottomNavigationBar(navController: NavController) {
                         Text(
                             text = item.label,
                             fontSize = 12.sp,
-                            color = if (currentRoute == item.route) Tekhelet else PompAndPower.copy(alpha = 0.7f),
                         )
                     },
                     selected = currentRoute == item.route,
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Tekhelet,
+                        unselectedIconColor = PompAndPower.copy(alpha = 0.7f),
+                        selectedTextColor = Tekhelet,
+                        unselectedTextColor = PompAndPower.copy(alpha = 0.7f),
+                        indicatorColor = PompAndPower.copy(alpha = 0.4f)
+                    ),
                     onClick = {
                         navController.navigate(item.route) {
                             popUpTo(navController.graph.startDestinationId) {
