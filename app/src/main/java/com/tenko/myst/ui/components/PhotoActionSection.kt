@@ -1,6 +1,6 @@
 package com.tenko.myst.ui.components
 
-import androidx.compose.foundation.Image
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +24,7 @@ import com.tenko.myst.ui.theme.White
 
 @Composable
 fun PhotoActionsSection(
-    imageUrl: String?,
+    imageUrl: Uri?,
     onEditClick: () -> Unit,
     onRemoveClick: () -> Unit
 ) {
@@ -33,24 +33,16 @@ fun PhotoActionsSection(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (imageUrl == null)
-            Image(
-                painter = painterResource(R.drawable.profile_picture_placeholder),
-                contentDescription = "Profile picture",
-                modifier = Modifier
-                    .size(150.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop,
-            )
-        else
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = "Profile Photo",
-                modifier = Modifier
-                    .size(150.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = "Profile Photo",
+            modifier = Modifier
+                .size(150.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.profile_picture_placeholder),
+            error = painterResource(R.drawable.profile_picture_placeholder)
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
