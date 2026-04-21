@@ -12,11 +12,13 @@ import java.time.LocalDate
 class MedicationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val title = intent.getStringExtra("title") ?: "Toma tu medicamento"
+        val startDateStr = intent.getStringExtra("startDate") // yyyy-MM-dd
         val endDateStr = intent.getStringExtra("endDate") // yyyy-MM-dd
 
         // Validar si hoy todavía está dentro del rango
         val today = LocalDate.now()
         val endDate = LocalDate.parse(endDateStr)
+        val startDate = LocalDate.parse(startDateStr)
 
         if (!today.isAfter(endDate)) {
             showNotification(context, title)
@@ -29,10 +31,8 @@ class MedicationReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "medication_channel"
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Recordatorios", NotificationManager.IMPORTANCE_HIGH)
-            notificationManager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(channelId, "Recordatorios", NotificationManager.IMPORTANCE_HIGH)
+        notificationManager.createNotificationChannel(channel)
 
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(com.tenko.myst.R.drawable.tenko_avatar) // Asegúrate de tener un icono
