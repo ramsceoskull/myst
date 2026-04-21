@@ -59,7 +59,7 @@ object ApiClient {
                 }
 
                 refreshTokens {
-                    tokenManager?.deleteToken()
+                    tokenManager?.deleteAuthData()
                     null
                 }
             }
