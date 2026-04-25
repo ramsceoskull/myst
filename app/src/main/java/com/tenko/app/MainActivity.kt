@@ -1,4 +1,4 @@
-package com.tenko.myst
+package com.tenko.app
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -8,10 +8,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.tenko.myst.data.api.ApiClient
-import com.tenko.myst.data.api.TokenManager
-import com.tenko.myst.navigation.AppNavigation
-import com.tenko.myst.ui.theme.MystTheme
+import com.tenko.app.data.api.ApiClient
+import com.tenko.app.data.api.TokenManager
+import com.tenko.app.navigation.AppNavigation
+import com.tenko.app.ui.theme.MystTheme
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 class MainActivity : ComponentActivity() {
