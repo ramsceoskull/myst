@@ -7,13 +7,13 @@ plugins {
 }
 
 android {
-    namespace = "com.tenko.myst"
+    namespace = "com.tenko.app"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.tenko.myst"
+        applicationId = "com.tenko.app"
         minSdk = 30
         targetSdk = 36
         versionCode = 1
@@ -83,10 +83,10 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
     implementation(libs.ktor.client.auth)
-//    implementation(libs.cloudinary.android)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.firebase.appdistribution.gradle)
+    implementation(libs.compose.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
