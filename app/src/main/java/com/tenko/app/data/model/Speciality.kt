@@ -1,0 +1,14 @@
+package com.tenko.app.data.model
+
+enum class Speciality {
+    CARDIOLOGIST,
+    DERMATOLOGIST,
+    NEUROLOGIST,
+    PEDIATRICIAN,
+    PSYCHIATRIST,
+    ORTHOPEDIC_SURGEON,
+    GYNECOLOGIST,
+    ONCOLOGIST,
+    ENDOCRINOLOGIST,
+    GASTROENTEROLOGIST
+}
