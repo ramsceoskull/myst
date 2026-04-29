@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.screen
+package com.tenko.app.ui.screen
 
 import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.animateDpAsState
@@ -41,18 +41,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.R
-import com.tenko.myst.ui.theme.Monserrat
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.StarsLove
-import com.tenko.myst.ui.theme.Tekhelet
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.ui.theme.Monserrat
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.StarsLove
+import com.tenko.app.ui.theme.Tekhelet
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun EmailSentScreen(
@@ -102,7 +104,7 @@ fun EmailSentScreen(
 
         val offset by animateDpAsState(
             targetValue = if (visible) 0.dp else 40.dp,
-            animationSpec = tween(1000)
+            animationSpec = tween(1500)
         )
         val alpha by animateFloatAsState(
             targetValue = if (visible) 1f else 0f,
@@ -112,7 +114,8 @@ fun EmailSentScreen(
             modifier = Modifier
                 .offset(y = offset)
                 .alpha(alpha),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Button(
                 onClick = onClick,
@@ -128,7 +131,6 @@ fun EmailSentScreen(
                     fontSize = 20.sp
                 )
             }
-            Spacer(modifier = Modifier.height(20.dp))
 
             ResendEmail(onResendClick)
         }
@@ -165,7 +167,7 @@ fun LogoSection() {
 fun MailIconCircle(visible: Boolean) {
     val scale by animateFloatAsState(
         targetValue = if (visible) 1f else 0.5f,
-        animationSpec = tween(2000, easing = EaseOutBack)
+        animationSpec = tween(3000, easing = EaseOutBack)
     )
 
     Box(
@@ -223,5 +225,17 @@ fun ResendEmail(onResendClick: () -> Unit) {
                 }
             }
         }
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EmailSentScreenPreview() {
+    EmailSentScreen(
+        title = "¡Correo enviado!",
+        description = "Revisa tu bandeja de entrada para restablecer tu contraseña.",
+        actionLabel = "Volver al inicio",
+        onClick = {},
+        onResendClick = {}
     )
 }
