@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -11,9 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.R
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun AddMedicationButton(onClick: () -> Unit) {

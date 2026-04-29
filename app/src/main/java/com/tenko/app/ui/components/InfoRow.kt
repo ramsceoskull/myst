@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -18,14 +18,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.R
-import com.tenko.myst.ui.theme.RaisinBlack
+import com.tenko.app.R
+import com.tenko.app.ui.theme.RaisinBlack
 
 @Composable
 fun InfoRow(
     label: String,
     value: String,
-    showArrow: Boolean = true,
     onClick: (() -> Unit)? = null
 ) {
     Column(
@@ -55,7 +54,7 @@ fun InfoRow(
                     color = RaisinBlack
                 )
 
-                if(showArrow) {
+                if(onClick != null) {
                     Icon(
                         painter = painterResource(R.drawable.chevron_right_solid_full),
                         contentDescription = "Editar $label",
@@ -70,7 +69,7 @@ fun InfoRow(
 
         HorizontalDivider(
             color = Color(0xFFE0E0E0),
-            thickness = 0.5.dp
+            thickness = (0.7).dp
         )
     }
 }

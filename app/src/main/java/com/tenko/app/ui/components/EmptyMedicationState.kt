@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,8 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.R
-import com.tenko.myst.data.model.MedicineStatus
+import com.tenko.app.R
+import com.tenko.app.data.model.MedicineStatus
+import com.tenko.app.ui.theme.PompAndPower
 
 @Composable
 fun EmptyMedicationState(filter: MedicineStatus) {
@@ -58,7 +58,7 @@ fun EmptyMedicationState(filter: MedicineStatus) {
             painter = painterResource(icon),
             contentDescription = null,
             modifier = Modifier.size(72.dp),
-            tint = if(icon != R.drawable.realistic_medicine) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color.Unspecified
+            tint = if(icon != R.drawable.realistic_medicine) PompAndPower.copy(alpha = 0.6f) else Color.Unspecified
         )
 
         Spacer(modifier = Modifier.height(16.dp))

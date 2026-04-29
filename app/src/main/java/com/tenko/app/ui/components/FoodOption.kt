@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -14,8 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun FoodOption(

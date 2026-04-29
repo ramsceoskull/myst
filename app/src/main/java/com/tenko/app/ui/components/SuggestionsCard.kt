@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,12 +26,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import com.tenko.myst.R
-import com.tenko.myst.navigation.AppScreens
-import com.tenko.myst.ui.theme.AntiFlashWhite
-import com.tenko.myst.ui.theme.Tekhelet
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.navigation.AppScreens
+import com.tenko.app.ui.theme.AntiFlashWhite
+import com.tenko.app.ui.theme.Tekhelet
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun SuggestionsCard(navController: NavController) {

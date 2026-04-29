@@ -1,7 +1,7 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
-import com.tenko.myst.R
-import com.tenko.myst.navigation.AppScreens
+import com.tenko.app.R
+import com.tenko.app.navigation.AppScreens
 
 sealed class BottomNavItem(
     val route: String,

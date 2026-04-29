@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,9 +12,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.data.model.MedicineStatus
-import com.tenko.myst.data.view.MedicineViewModel
-import com.tenko.myst.data.view.NotificationViewModel
+import com.tenko.app.data.model.MedicineStatus
+import com.tenko.app.data.view.MedicineViewModel
+import com.tenko.app.data.view.NotificationViewModel
 
 @Composable
 fun FilterSection(viewModel: NotificationViewModel) {

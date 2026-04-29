@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.runtime.Composable
@@ -12,10 +12,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.tenko.myst.navigation.AppScreens
-import com.tenko.myst.ui.theme.Monserrat
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.SweetGrey
+import com.tenko.app.navigation.AppScreens
+import com.tenko.app.ui.theme.Monserrat
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.SweetGrey
 
 @Composable
 fun SignupRedirectText(navController: NavController) {

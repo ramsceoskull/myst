@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,13 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.data.model.CycleEvent
-import com.tenko.myst.data.model.EventType
-import com.tenko.myst.ui.theme.NoteColor
-import com.tenko.myst.ui.theme.OvulationColor
-import com.tenko.myst.ui.theme.PeriodColor
-import com.tenko.myst.ui.theme.SelectedDayColor
-import com.tenko.myst.ui.theme.SymptomColor
+import com.tenko.app.data.model.CycleEvent
+import com.tenko.app.data.model.EventType
+import com.tenko.app.ui.theme.NoteColor
+import com.tenko.app.ui.theme.OvulationColor
+import com.tenko.app.ui.theme.PeriodColor
+import com.tenko.app.ui.theme.SelectedDayColor
+import com.tenko.app.ui.theme.SymptomColor
 import java.time.LocalDate
 
 @Composable

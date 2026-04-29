@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -20,10 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.R
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.RaisinBlack
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,11 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.data.model.NotificationItem
-import com.tenko.myst.data.view.NotificationViewModel
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.Tekhelet
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.data.model.NotificationItem
+import com.tenko.app.data.view.NotificationViewModel
+import com.tenko.app.ui.theme.Tekhelet
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun NotificationsContent(

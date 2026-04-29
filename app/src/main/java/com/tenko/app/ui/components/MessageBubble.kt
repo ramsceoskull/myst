@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -13,8 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.data.model.ChatMessage
-import com.tenko.myst.ui.theme.Tekhelet
+import com.tenko.app.data.model.ChatMessage
+import com.tenko.app.ui.theme.Tekhelet
 
 @Composable
 fun MessageBubble(message: ChatMessage) {

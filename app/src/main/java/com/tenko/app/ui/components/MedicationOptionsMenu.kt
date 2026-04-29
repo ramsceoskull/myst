@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -26,9 +26,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.R
-import com.tenko.myst.data.model.Medicine
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.data.model.Medicine
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun MedicationOptionsMenu(

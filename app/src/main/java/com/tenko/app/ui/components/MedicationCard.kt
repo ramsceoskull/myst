@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -30,15 +30,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.R
-import com.tenko.myst.data.model.Medicine
-import com.tenko.myst.data.model.MedicineStatus
-import com.tenko.myst.ui.theme.MedCardBg
-import com.tenko.myst.ui.theme.MedPending
-import com.tenko.myst.ui.theme.MedPrimary
-import com.tenko.myst.ui.theme.MedSkipped
-import com.tenko.myst.ui.theme.MedTaken
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.data.model.Medicine
+import com.tenko.app.data.model.MedicineStatus
+import com.tenko.app.ui.theme.MedCardBg
+import com.tenko.app.ui.theme.MedPending
+import com.tenko.app.ui.theme.MedPrimary
+import com.tenko.app.ui.theme.MedSkipped
+import com.tenko.app.ui.theme.MedTaken
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun MedicationCard(

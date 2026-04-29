@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
@@ -25,10 +25,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.R
-import com.tenko.myst.data.model.NotificationItem
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.data.model.NotificationItem
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun NotificationRow(
