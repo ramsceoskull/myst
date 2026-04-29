@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.screen
+package com.tenko.app.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,16 +11,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavHostController
-import com.tenko.myst.R
-import com.tenko.myst.navigation.AppScreens
-import com.tenko.myst.ui.theme.AntiFlashWhite
+import com.tenko.app.R
+import com.tenko.app.ui.theme.AntiFlashWhite
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen() {
     Column(
-        modifier = Modifier.fillMaxSize().background(AntiFlashWhite),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AntiFlashWhite),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -29,6 +29,10 @@ fun SplashScreen() {
             painter = painterResource(id = R.drawable.splash),
             contentDescription = "Logo Myst"
         )
+    }
+
+    LaunchedEffect(true) {
+        delay(2000L) // Simulate loading time (e.g., fetching data, initializing resources)
     }
 }
 
