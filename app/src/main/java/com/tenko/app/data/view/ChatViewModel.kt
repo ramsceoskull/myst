@@ -57,7 +57,7 @@ class ChatViewModel : ViewModel() {
                 }
 
                 // Caso B: El usuario solo presionó el botón "Daily Log"
-                text.equals("Daily Log", ignoreCase = true) -> {
+                text.equals("mi día", ignoreCase = true) -> {
                     addAssistantMessage("¡Claro! Cuéntame, ¿cómo te sientes hoy o qué síntomas has tenido? ✨")
                 }
 
