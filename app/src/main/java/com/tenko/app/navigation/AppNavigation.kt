@@ -1,5 +1,6 @@
 package com.tenko.app.navigation
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -139,16 +140,19 @@ fun AppNavigation(tokenManager: TokenManager) {
                 EmailSentScreen(
                     title = "Confirma tu correo electrónico",
                     description = "Hemos enviado un correo de confirmación a tu bandeja de entrada. Por favor, revisa tu bandeja de entrada o tu carpeta de spam para activar tu cuenta.",
-                    actionLabel = "Abrir correo electrónico",
+                    actionLabel = "Abrir correo",
                     onClick = {
-                        /*val emailIntent = Intent(Intent.ACTION_VIEW).apply {
-                            data = "content://com.android.email.provider".toUri()
+                        val intent = Intent(Intent.ACTION_MAIN).apply {
+                            addCategory(Intent.CATEGORY_APP_EMAIL)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
 
-                        if(emailIntent.resolveActivity(context.packageManager) != null) {
-                            context.startActivity(emailIntent)
-                        }*/
-                        navController.navigate(AppScreens.LoginScreen.route)
+                        if(intent.resolveActivity(context.packageManager) != null) {
+                            context.startActivity(intent)
+                        } else {
+                            // Si no hay una app de correo, simplemente volvemos al login
+                            navController.navigate(AppScreens.LoginScreen.route)
+                        }
                     },
                     onResendClick = { /* Lógica para reenviar el correo */ }
                 )
