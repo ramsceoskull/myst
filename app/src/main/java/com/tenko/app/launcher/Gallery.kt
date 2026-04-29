@@ -1,4 +1,4 @@
-package com.tenko.myst.launcher
+package com.tenko.app.launcher
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
