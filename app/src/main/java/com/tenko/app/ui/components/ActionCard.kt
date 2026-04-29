@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,20 +22,21 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.ui.theme.SweetGrey
-import com.tenko.myst.ui.theme.Tekhelet
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.ui.theme.SweetGrey
+import com.tenko.app.ui.theme.Tekhelet
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun ActionCard(
     icon: ImageVector,
     title: String,
     subtitle: String,
+    onClick : (() -> Unit)? = null,
     color: Color = Tekhelet,
-    enabled: Boolean = true) {
+) {
     Card(
-        onClick = {},
-        enabled = enabled
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
     ) {
         Row(
             horizontalArrangement = Arrangement.Start,
