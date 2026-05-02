@@ -143,7 +143,7 @@ fun ProfileScreen(
                         ) {
                             Icon(
                                 modifier = Modifier.size(24.dp),
-                                painter = painterResource(R.drawable.rotate_right_solid_full),
+                                painter = painterResource(R.drawable.door_open_solid_full),
                                 contentDescription = null,
                             )
                             Text("¿Cerrar sesión?")
