@@ -150,7 +150,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
             // Dosage & Duration
             Text("Dosis y duración", fontSize = 14.sp, color = Color.Gray)
             Text(
-                text = "¿Cuánto medicamento ocupas aplicar? & ¿De qué tipo es?",
+                text = "¿Cuánto medicamento debes aplicar? & ¿De qué tipo es?",
                 fontSize = 12.sp,
                 color = Color.LightGray
             )
@@ -220,7 +220,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
 
             // Time
             Text("Hora", fontSize = 14.sp, color = Color.Gray)
-            Text("Selecciona la hora que ocupas tomar el medicamento", fontSize = 12.sp, color = Color.LightGray)
+            Text("Selecciona la hora que debes tomar el medicamento", fontSize = 12.sp, color = Color.LightGray)
 
             Spacer(modifier = Modifier.height(6.dp))
 

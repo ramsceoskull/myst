@@ -86,7 +86,7 @@ fun DoctorDetailsScreen(navController: NavHostController, doctor: Doctor) {
             )
 
             Text(
-                "Citas proximas",
+                "Citas próximas",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )

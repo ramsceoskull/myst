@@ -94,7 +94,7 @@ fun MainScreen(
 
                 item {
                     Text(
-                        text = "Proxima medicación",
+                        text = "Próxima medicación",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(top = 16.dp)
