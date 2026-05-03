@@ -21,8 +21,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
+import com.tenko.app.data.model.Speciality
 import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +78,75 @@ fun DropdownField(
                     text = { Text(it) },
                     onClick = {
                         onSelected(it)
+                        expanded = false
+                    },
+                    colors = MenuItemColors(
+                        textColor = RaisinBlack,
+                        leadingIconColor = Color.Unspecified,
+                        trailingIconColor = Color.Unspecified,
+                        disabledTextColor = Color.Unspecified,
+                        disabledLeadingIconColor = Color.Unspecified,
+                        disabledTrailingIconColor = Color.Unspecified,
+                    )
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SpecialityDropdown(
+    selected: String,
+    onSelected: (Speciality) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = Speciality.entries.toTypedArray()
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {  },
+            readOnly = true,
+            placeholder = { Text("Selecciona especialidad") },
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.chevron_down_solid_full),
+                    contentDescription = "Dropdown icon",
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = White,
+                unfocusedContainerColor = White,
+                focusedBorderColor = PompAndPower,
+                unfocusedBorderColor = SweetGrey,
+                focusedTrailingIconColor = PompAndPower,
+                unfocusedTrailingIconColor = SweetGrey,
+                focusedTextColor = PompAndPower,
+                unfocusedTextColor = SweetGrey,
+                unfocusedPlaceholderColor = SweetGrey
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.menuAnchor().fillMaxWidth()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = White,
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            options.forEach { speciality ->
+                DropdownMenuItem(
+                    text = { Text(speciality.displayName) },
+                    onClick = {
+                        onSelected(speciality)
                         expanded = false
                     },
                     colors = MenuItemColors(
