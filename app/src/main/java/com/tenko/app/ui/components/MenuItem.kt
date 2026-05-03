@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,22 +16,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.R
-import com.tenko.myst.ui.theme.AntiFlashWhite
-import com.tenko.myst.ui.theme.Tekhelet
+import com.tenko.app.R
+import com.tenko.app.ui.theme.AntiFlashWhite
+import com.tenko.app.ui.theme.Tekhelet
 
 @Composable
-fun MenuItem(title: String, icon: Int, color: Color = Tekhelet, onclick: () -> Unit = {}) {
+fun MenuItem(
+    icon: Int,
+    title: String,
+    onClick: (() -> Unit)? = null,
+    color: Color = Tekhelet
+) {
     Card(
-        onClick = onclick,
-        shape = RoundedCornerShape(20.dp),
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = AntiFlashWhite),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -52,7 +55,6 @@ fun MenuItem(title: String, icon: Int, color: Color = Tekhelet, onclick: () -> U
                 text = title,
                 fontSize = 18.sp,
                 color = color,
-                fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
 
