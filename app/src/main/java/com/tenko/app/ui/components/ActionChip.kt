@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
