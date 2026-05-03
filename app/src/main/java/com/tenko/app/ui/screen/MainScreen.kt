@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.screen
+package com.tenko.app.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,32 +30,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.tenko.myst.R
-import com.tenko.myst.data.model.Medicine
-import com.tenko.myst.data.model.MedicineStatus
-import com.tenko.myst.data.view.AuthViewModel
-import com.tenko.myst.data.view.MedicineViewModel
-import com.tenko.myst.data.view.NotificationViewModel
-import com.tenko.myst.data.view.ProfilePictureViewModel
-import com.tenko.myst.navigation.AppScreens
-import com.tenko.myst.ui.components.AddMedicationButton
-import com.tenko.myst.ui.components.AppTopBar
-import com.tenko.myst.ui.components.BottomNavigationBar
-import com.tenko.myst.ui.components.EmptyMedicationState
-import com.tenko.myst.ui.components.FilterSection
-import com.tenko.myst.ui.components.MedicationCard
-import com.tenko.myst.ui.components.NotificationsOverlay
-import com.tenko.myst.ui.components.SuggestionsCard
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.data.model.Medicine
+import com.tenko.app.data.model.MedicineStatus
+import com.tenko.app.data.view.AuthViewModel
+import com.tenko.app.data.view.MedicineViewModel
+import com.tenko.app.data.view.NotificationViewModel
+import com.tenko.app.navigation.AppScreens
+import com.tenko.app.ui.components.AddMedicationButton
+import com.tenko.app.ui.components.AppTopBar
+import com.tenko.app.ui.components.BottomNavigationBar
+import com.tenko.app.ui.components.EmptyMedicationState
+import com.tenko.app.ui.components.FilterSection
+import com.tenko.app.ui.components.MedicationCard
+import com.tenko.app.ui.components.NotificationsOverlay
+import com.tenko.app.ui.components.SuggestionsCard
+import com.tenko.app.ui.theme.BackgroundColor
+import com.tenko.app.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavController,
+    authViewModel: AuthViewModel = viewModel(),
     notificationViewModel: NotificationViewModel,
-    medicineViewModel: MedicineViewModel,
-    authViewModel: AuthViewModel = viewModel()
+    medicineViewModel: MedicineViewModel
 ) {
 //    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -65,8 +63,7 @@ fun MainScreen(
     var medicineToDelete by remember { mutableStateOf<Medicine?>(null) }
 
     Scaffold(
-        modifier = Modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             AppTopBar(
                 title = "Myst",
@@ -79,15 +76,15 @@ fun MainScreen(
         },
         bottomBar = { BottomNavigationBar(navController) },
         floatingActionButton = { AddMedicationButton(onClick = { navController.navigate(AppScreens.AddMedicationScreen.route) }) },
-        containerColor = White,
-    ) { padding ->
+        containerColor = BackgroundColor,
+    ) { paddingValues ->
         Box {
             val medicines by medicineViewModel.filteredMedicines.collectAsState()
             val medication by medicineViewModel.medicines.collectAsState()
             val currentFilter by medicineViewModel.filter.collectAsState()
 
             LazyColumn(
-                contentPadding = padding,
+                contentPadding = paddingValues,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 30.dp)
@@ -128,7 +125,7 @@ fun MainScreen(
 
             if (showNotifications) {
                 NotificationsOverlay(
-                    padding = padding.calculateTopPadding(),
+                    padding = paddingValues.calculateTopPadding(),
                     viewModel = notificationViewModel,
                     onDismiss = { showNotifications = false },
                     onSeeAllClick = { navController.navigate(AppScreens.AllNotificationsScreen.route) },
