@@ -1,4 +1,4 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -14,48 +15,91 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.autofill.AutofillType
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.R
-import com.tenko.myst.regex.PasswordRequirement
-import com.tenko.myst.regex.hasDigit
-import com.tenko.myst.regex.hasLowerCase
-import com.tenko.myst.regex.hasMinLength
-import com.tenko.myst.regex.hasNoSpaces
-import com.tenko.myst.regex.hasSpecialChar
-import com.tenko.myst.regex.hasUpperCase
-import com.tenko.myst.regex.isValidEmail
-import com.tenko.myst.regex.isValidPassword
-import com.tenko.myst.ui.theme.AntiFlashWhite
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.SweetGrey
+import com.tenko.app.R
+import com.tenko.app.regex.PasswordRequirement
+import com.tenko.app.regex.hasDigit
+import com.tenko.app.regex.hasLowerCase
+import com.tenko.app.regex.hasMinLength
+import com.tenko.app.regex.hasNoSpaces
+import com.tenko.app.regex.hasSpecialChar
+import com.tenko.app.regex.hasUpperCase
+import com.tenko.app.regex.isValidEmail
+import com.tenko.app.regex.isValidPassword
+import com.tenko.app.ui.theme.AntiFlashWhite
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.SweetGrey
 
 @Composable
-fun nameInput(showWarnings: Boolean = true): String {
+fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin apellidos)"): Pair<String, String> {
     var name by remember { mutableStateOf("") }
+    val initials by remember(name) {
+        derivedStateOf {
+            name
+                .split(" ")
+                .filter { it.isNotBlank() }
+                .map { it.first().uppercaseChar() }
+                .joinToString("")
+        }
+    }
+
     OutlinedTextField(
         value = name,
-        onValueChange = {
-            name = it
+        onValueChange = { newText ->
+            if(!enableWhiteSpace) {
+                if(!newText.contains(" "))
+                    name = newText.split(" ")
+                        .joinToString(" ") { word ->
+                            word.replaceFirstChar {
+                                if(it.isLowerCase()) it.titlecase() else it.toString()
+                            }
+                        }
+            } else {
+                name = newText.split(" ")
+                    .joinToString(" ") { word ->
+                        word.replaceFirstChar {
+                            if(it.isLowerCase()) it.titlecase() else it.toString()
+                        }
+                    }
+            }
         },
-        label = { Text(text = "Nombres (sin apellidos)", fontSize = 14.sp) },
+        placeholder = { Text(text = label, fontSize = 14.sp) },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Words,
+            keyboardType = KeyboardType.Text
+        ),
         trailingIcon = {
-            Icon(
-                modifier = Modifier.size(35.dp).padding(end = 4.dp),
-                painter = painterResource(id = R.drawable.user_regular_full),
-                contentDescription = "Icono de sobre"
-            )
+            if(enableWhiteSpace)
+                Icon(
+                    modifier = Modifier.size(35.dp).padding(end = 4.dp),
+                    painter = painterResource(id = R.drawable.user_regular_full),
+                    contentDescription = "Icono de sobre"
+                )
         },
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedContainerColor = AntiFlashWhite,
@@ -63,16 +107,15 @@ fun nameInput(showWarnings: Boolean = true): String {
             unfocusedBorderColor = Color.Transparent,
             focusedTrailingIconColor = PompAndPower,
             unfocusedTrailingIconColor = SweetGrey,
-            unfocusedLabelColor = Color.Gray,
+            unfocusedPlaceholderColor = Color.Gray,
         ),
         modifier = Modifier
             .fillMaxWidth()
             .height(66.dp)
     )
-
     Spacer(Modifier.height(8.dp))
 
-    return name
+    return name to initials
 }
 
 @Composable
@@ -80,13 +123,23 @@ fun emailInput(showWarnings: Boolean = true): String {
     var email by remember { mutableStateOf("") }
     var emailError by remember { mutableStateOf(false) }
 
+    val autofill = LocalAutofill.current
+    val autofillNode = AutofillNode(
+        autofillTypes = listOf(AutofillType.EmailAddress),
+        onFill = { email = it }
+    )
+
+    LocalAutofillTree.current += autofillNode
+
     OutlinedTextField(
         value = email,
-        onValueChange = {
-            email = it
-            emailError = !isValidEmail(it)
+        onValueChange = { newText ->
+            if(!newText.contains(" ")) {
+                email = newText
+                emailError = !isValidEmail(newText)
+            }
         },
-        label = { Text(text = "Correo electrónico", fontSize = 14.sp) },
+        placeholder = { Text(text = "Correo electrónico", fontSize = 14.sp) },
         isError = emailError,
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
@@ -103,11 +156,25 @@ fun emailInput(showWarnings: Boolean = true): String {
             unfocusedBorderColor = Color.Transparent,
             focusedTrailingIconColor = PompAndPower,
             unfocusedTrailingIconColor = SweetGrey,
-            unfocusedLabelColor = Color.Gray,
+            unfocusedPlaceholderColor = Color.Gray,
         ),
         modifier = Modifier
             .fillMaxWidth()
             .height(66.dp)
+            .onGloballyPositioned {
+                autofillNode.boundingBox = it.boundsInWindow()
+            }
+            .onFocusChanged { focusState ->
+                autofill?.let {
+                    if(focusState.isFocused)
+                        it.requestAutofillForNode(autofillNode)
+                    else
+                        it.cancelAutofillForNode(autofillNode)
+                }
+            }
+            .semantics {
+                contentType = ContentType.EmailAddress
+            }
     )
 
     if(showWarnings) {
@@ -128,14 +195,14 @@ fun emailInput(showWarnings: Boolean = true): String {
     }
     Spacer(Modifier.height(8.dp))
 
-    return email
+    return email.trim()
 }
 
 @Composable
 fun passwordInput(showWarnings: Boolean = true): String {
     var password by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf(false) }
-    var passwordVisible by remember { mutableStateOf(false)}
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val minLengthValid = hasMinLength(password)
     val upperCaseValid = hasUpperCase(password)
@@ -146,11 +213,13 @@ fun passwordInput(showWarnings: Boolean = true): String {
 
     OutlinedTextField(
         value = password,
-        onValueChange = {
-            password = it
-            passwordError = !isValidPassword(it)
+        onValueChange = { newText ->
+            if(!newText.contains(" ")) {
+                password = newText
+                passwordError = !isValidPassword(newText)
+            }
         },
-        label = { Text("Contraseña", fontSize = 14.sp) },
+        placeholder = { Text("Contraseña", fontSize = 14.sp) },
         isError = passwordError,
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
@@ -171,11 +240,14 @@ fun passwordInput(showWarnings: Boolean = true): String {
             unfocusedBorderColor = Color.Transparent,
             focusedTrailingIconColor = PompAndPower,
             unfocusedTrailingIconColor = SweetGrey,
-            unfocusedLabelColor = Color.Gray,
+            unfocusedPlaceholderColor = Color.Gray,
         ),
         modifier = Modifier
             .fillMaxWidth()
             .height(66.dp)
+            .semantics {
+                contentType = ContentType.Password
+            }
     )
 
     if(showWarnings) {
@@ -192,11 +264,11 @@ fun passwordInput(showWarnings: Boolean = true): String {
                 PasswordRequirement(text = "Una mayúscula", isValid = upperCaseValid)
                 PasswordRequirement(text = "Una minúscula", isValid = lowerCaseValid)
                 PasswordRequirement(text = "Un número", isValid = digitValid)
-                PasswordRequirement(text = "Un caracter especial", isValid = specialCharValid)
+                PasswordRequirement(text = "Un caracter especial (_-¡!@#\$%^&*(),.¿?\":;/{}|<>)", isValid = specialCharValid)
                 PasswordRequirement(text = "Sin espacios", isValid = noSpacesValid)
             }
         }
     }
 
-    return password
+    return password.trim()
 }
