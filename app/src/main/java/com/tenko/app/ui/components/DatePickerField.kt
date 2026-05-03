@@ -1,9 +1,11 @@
-package com.tenko.myst.ui.components
+package com.tenko.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -16,9 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.tenko.myst.R
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.White
 
 @Composable
 fun DatePickerField(
@@ -35,14 +37,26 @@ fun DatePickerField(
             value = value,
             onValueChange = {},
             placeholder = { Text(label) },
+            trailingIcon = {
+                if(value.isEmpty())
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_right_solid_full),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+            },
             colors = colors,
-            readOnly = true,
-            modifier = Modifier.weight(1f),
+            enabled = false,
+            modifier = Modifier.weight(1f).height(55.dp).clickable(onClick = onClick),
             shape = RoundedCornerShape(12.dp),
         )
         IconButton(
             onClick = onClick,
-            modifier = Modifier.size(52.dp).background(color = PompAndPower, shape = RoundedCornerShape(12.dp)),
+            modifier = Modifier
+                .size(55.dp)
+                .background(
+                    color = PompAndPower,
+                    shape = RoundedCornerShape(12.dp)),
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
