@@ -1,10 +1,8 @@
-package com.tenko.myst.ui.screen
+package com.tenko.app.ui.screen
 
-import android.app.AlarmManager
-import android.app.PendingIntent
+import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -52,22 +50,22 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.myst.R
-import com.tenko.myst.data.model.MedicineEvent
-import com.tenko.myst.data.notifications.MedicationReceiver
-import com.tenko.myst.data.view.MedicineViewModel
-import com.tenko.myst.ui.components.AppTopBar
-import com.tenko.myst.ui.components.DatePickerField
-import com.tenko.myst.ui.components.DropdownField
-import com.tenko.myst.ui.components.FoodOption
-import com.tenko.myst.ui.theme.AntiFlashWhite
-import com.tenko.myst.ui.theme.PompAndPower
-import com.tenko.myst.ui.theme.SweetGrey
-import com.tenko.myst.ui.theme.White
+import com.tenko.app.R
+import com.tenko.app.data.model.MedicineEvent
+import com.tenko.app.data.notifications.scheduleMedicationAlarm
+import com.tenko.app.data.view.MedicineViewModel
+import com.tenko.app.ui.components.AppTopBar
+import com.tenko.app.ui.components.DatePickerField
+import com.tenko.app.ui.components.DropdownField
+import com.tenko.app.ui.components.FoodOption
+import com.tenko.app.ui.theme.AntiFlashWhite
+import com.tenko.app.ui.theme.BackgroundColor
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.SweetGrey
+import com.tenko.app.ui.theme.White
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,14 +111,13 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
         topBar = {
             AppTopBar(
                 title = "Registrar medicamento",
-                onBackClick = onClose,
-                navigationIcon = R.drawable.xmark_solid_full
+                onBackClick = onClose
             )
         },
         bottomBar = {
             Spacer(modifier = Modifier.height(8.dp))
         },
-        containerColor = White
+        containerColor = BackgroundColor
     ) { padding ->
         Column(
             modifier = Modifier
@@ -231,11 +228,6 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                val hourLabel = when {
-                    hour == 0 -> viewModel.onTimeFormatChange("AM/PM")
-                    hour >= 12 -> viewModel.onTimeFormatChange("PM")
-                    else -> viewModel.onTimeFormatChange("AM")
-                }
                 val timeIcon = when (hour) {
                     in 6..11 -> R.drawable.mug_hot_solid_full
                     in 12..17 -> R.drawable.sun_solid_full
@@ -245,7 +237,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
 
                 OutlinedTextField(
                     value = reminderTime,
-                    onValueChange = { viewModel.onTimeSelected(hour, it) },
+                    onValueChange = { viewModel.onTimeSelected(hour, minute) },
                     placeholder = { Text("Seleccionar hora") },
                     readOnly = true,
                     colors = colors,
@@ -379,43 +371,11 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
 
 fun showDatePicker(context: Context, onDateSelected: (LocalDate) -> Unit) {
     val now = LocalDate.now()
-    android.app.DatePickerDialog(
+    DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
             onDateSelected(LocalDate.of(year, month + 1, dayOfMonth))
         },
         now.year, now.monthValue - 1, now.dayOfMonth
     ).show()
-}
-
-fun scheduleMedicationAlarm(context: Context, startDate: LocalDate?, endDate: LocalDate?, hour: Int = 8, minute: Int = 0) {
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val intent = Intent(context, MedicationReceiver::class.java).apply {
-        putExtra("title", "Hora de tu medicamento")
-        putExtra("endDate", endDate.toString())
-    }
-
-    val pendingIntent = PendingIntent.getBroadcast(
-        context,
-        0,
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    // Ejemplo: Programar para mañana a las 8:00 AM
-    val calendar = Calendar.getInstance().apply {
-        timeInMillis = System.currentTimeMillis()
-        set(Calendar.HOUR_OF_DAY, hour)
-        set(Calendar.MINUTE, minute)
-        // Si hoy es después de la fecha de inicio, empezar mañana
-        // Si no, empezar en la fecha de inicio
-    }
-
-    // Alarmas exactas (requieren permiso SCHEDULE_EXACT_ALARM en Android 12+)
-    alarmManager.setRepeating(
-        AlarmManager.RTC_WAKEUP,
-        calendar.timeInMillis,
-        AlarmManager.INTERVAL_DAY, // Se repite cada día
-        pendingIntent
-    )
 }
