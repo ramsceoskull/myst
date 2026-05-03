@@ -1,14 +1,13 @@
-package com.tenko.myst.data.view
+package com.tenko.app.data.view
 
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tenko.myst.data.model.Medicine
-import com.tenko.myst.data.model.MedicineEvent
-import com.tenko.myst.data.model.MedicineStatus
+import com.tenko.app.data.model.Medicine
+import com.tenko.app.data.model.MedicineEvent
+import com.tenko.app.data.model.MedicineStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +17,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class MedicineViewModel : ViewModel() {
     private val _medicines = MutableStateFlow<List<Medicine>>(emptyList())
@@ -163,14 +165,26 @@ class MedicineViewModel : ViewModel() {
         _uiState.update { it.copy(timeFormat = value) }
     }
 
-    fun onTimeSelected(hour: Int, value : String) {
-        when {
-            hour >= 12 -> _uiState.update { it.copy(timeFormat = "pm") } // PM
-            else -> _uiState.update { it.copy(timeFormat = "am") } // AM
-        }
+    fun formatSelectedTime(hour: Int, minute: Int): String {
+        val localTime = LocalTime.of(hour, minute)
+        // Usamos el formato de 12h o 24h según prefieras, pero asegurando Localidad
+        val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
+        return localTime.format(formatter)
+    }
+
+    fun onTimeSelected(hour: Int, minute: Int) {
+        // 1. Formateamos la hora para mostrar en la UI (Local)
+        val formattedTime = formatSelectedTime(hour, minute)
+
+        // 2. Determinamos AM/PM
+        val format = if (hour >= 12) "pm" else "am"
 
         _uiState.update {
-            it.copy(time = value/*, showTimeDialog = false*/)
+            it.copy(
+                time = formattedTime,
+                timeFormat = format,
+                showTimeDialog = false // Cerramos el diálogo aquí
+            )
         }
     }
 
