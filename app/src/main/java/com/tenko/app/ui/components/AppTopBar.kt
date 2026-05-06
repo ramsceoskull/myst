@@ -138,6 +138,7 @@ fun AppTopBar(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = White),
             modifier = Modifier
                 .fillMaxWidth()
+                .background(White)
                 .padding(horizontal = 8.dp)
         )
 
@@ -197,7 +198,7 @@ fun AppTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
     notificationViewModel: NotificationViewModel,
     authViewModel: AuthViewModel = viewModel(),
-    actions: () -> Unit
+    actions: (() -> Unit)? = null
 ) {
     // 1. Obtenemos el usuario del estado del ViewModel (es reactivo)
     val user = authViewModel.currentUser
@@ -234,21 +235,23 @@ fun AppTopBar(
                 )
             },
             actions = {
-                IconButton(onClick = actions) {
-                    if(hasUnread) {
-                        Icon(
-                            tint = null,
-                            contentDescription = "Bandeja de entrada",
-                            painter = painterResource(R.drawable.bell_new_notification),
-                            modifier = Modifier.size(42.dp)
-                        )
-                    } else {
-                        Icon(
-                            tint = null,
-                            contentDescription = "Bandeja de entrada",
-                            painter = painterResource(R.drawable.bell_no_notification),
-                            modifier = Modifier.size(42.dp)
-                        )
+                actions?.let {
+                    IconButton(onClick = actions) {
+                        if(hasUnread) {
+                            Icon(
+                                tint = null,
+                                contentDescription = "Bandeja de entrada",
+                                painter = painterResource(R.drawable.bell_new_notification),
+                                modifier = Modifier.size(42.dp)
+                            )
+                        } else {
+                            Icon(
+                                tint = null,
+                                contentDescription = "Bandeja de entrada",
+                                painter = painterResource(R.drawable.bell_no_notification),
+                                modifier = Modifier.size(42.dp)
+                            )
+                        }
                     }
                 }
             },
@@ -257,6 +260,7 @@ fun AppTopBar(
             scrollBehavior = scrollBehavior,
             modifier = Modifier
                 .fillMaxWidth()
+                .background(White)
                 .padding(horizontal = 8.dp)
         )
     }
