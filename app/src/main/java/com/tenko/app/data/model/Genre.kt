@@ -1,6 +1,6 @@
 package com.tenko.app.data.model
 
-enum class Genre {
-    FEMALE,
-    MALE
+enum class Genre(val displayName: String) {
+    FEMALE("Femenino"),
+    MALE("Masculino")
 }
