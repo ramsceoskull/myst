@@ -66,7 +66,7 @@ fun BottomBar(
     onPreviousStep: () -> Unit,
     onFinalStep: () -> Unit,
     currentStep: Int,
-    totalSteps: Int = 2
+    totalSteps: Int = 3
 ) {
     val progress = (currentStep + 1) / totalSteps.toFloat()
 
@@ -113,14 +113,14 @@ fun BottomBar(
                                 contentColor = White
                             ),
                             shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.padding(vertical = 8.dp),
+                            modifier = Modifier.width(200.dp).padding(vertical = 8.dp),
                             content = {
                                 Text("Siguiente")
                             }
                         )
                     }
                     1 -> {
-                        Row {
+                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                             Button(
                                 onClick = { onPreviousStep() },
                                 colors = ButtonDefaults.buttonColors(
@@ -128,7 +128,38 @@ fun BottomBar(
                                     contentColor = White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.padding(vertical = 8.dp),
+                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                                content = {
+                                    Text("Atrás")
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Button(
+                                onClick = { onNextStep() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Tekhelet,
+                                    contentColor = White
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                                content = {
+                                    Text("Siguiente")
+                                }
+                            )
+                        }
+                    }
+                    2 -> {
+                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                            Button(
+                                onClick = { onPreviousStep() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Tekhelet,
+                                    contentColor = White
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
                                 content = {
                                     Text("Atrás")
                                 }
@@ -143,7 +174,7 @@ fun BottomBar(
                                     contentColor = White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.padding(vertical = 8.dp),
+                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
                                 content = {
                                     Text("Finalizar")
                                 }
