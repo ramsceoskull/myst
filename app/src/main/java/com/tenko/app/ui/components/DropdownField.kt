@@ -1,13 +1,22 @@
 package com.tenko.app.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MenuItemColors
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -20,12 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tenko.app.R
+import com.tenko.app.data.model.Country
 import com.tenko.app.data.model.Speciality
 import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.RaisinBlack
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.White
+import kotlin.text.contains
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,5 +172,65 @@ fun SpecialityDropdown(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun CountryDropdown(
+    countries: List<Country>,
+    selected: Country,
+    onSelect: (Country) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var search by remember { mutableStateOf("") }
+
+    val filtered = countries.filter {
+        it.name.contains(search, true) || it.code.contains(search)
+    }
+
+    Box {
+        OutlinedButton(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxHeight(),
+            enabled = false,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                disabledContainerColor = White,
+                disabledContentColor = RaisinBlack,
+            ),
+            border = ButtonDefaults.outlinedButtonBorder(true),
+            content = {
+                Text(
+                    text = "${selected.flag} ${selected.code}",
+                    fontSize = 16.sp
+                )
+            }
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = White,
+            shape = RoundedCornerShape(12.dp),
+            content = {
+                Column(
+                    modifier = Modifier
+                        .height(450.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    filtered.forEach { country ->
+                        DropdownMenuItem(
+                            text = {
+                                Text("${country.flag} ${country.name} (${country.code})")
+                            },
+                            onClick = {
+                                onSelect(country)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        )
     }
 }
