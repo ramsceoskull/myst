@@ -352,3 +352,35 @@ fun numberInput(label: String = "Número", initialValue: String = "", modifier: 
 
     return number.trim()
 }
+
+@Composable
+fun blockedInput(
+    label: String = "Campo bloqueado",
+    initialValue: String = "",
+    modifier: Modifier = Modifier
+): String {
+    var text by remember { mutableStateOf(initialValue) }
+
+    OutlinedTextField(
+        value = text,
+        onValueChange = { },
+        placeholder = { Text(text = label, fontSize = 14.sp) },
+        supportingText = { Text(label, fontSize = 12.sp) },
+        singleLine = true,
+        maxLines = 1,
+        shape = RoundedCornerShape(12.dp),
+        enabled = false,
+        /*colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = AntiFlashWhite,
+            focusedBorderColor = PompAndPower,
+            unfocusedBorderColor = Color.Transparent,
+            focusedTrailingIconColor = PompAndPower,
+            unfocusedTrailingIconColor = SweetGrey,
+            unfocusedPlaceholderColor = Color.Gray,
+        ),*/
+        modifier = modifier
+    )
+    Spacer(Modifier.height(6.dp))
+
+    return text
+}
