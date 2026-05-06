@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tenko.app.data.api.TokenManager
+import com.tenko.app.data.view.AddressViewModel
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.MedicineViewModel
 import com.tenko.app.data.view.NotificationViewModel
@@ -42,6 +43,7 @@ fun AppNavigation(tokenManager: TokenManager) {
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel = viewModel<NotificationViewModel>()
     val medicineViewModel = viewModel<MedicineViewModel>()
+    val addressViewModel = viewModel<AddressViewModel>()
 
     val context = LocalContext.current
 
@@ -158,7 +160,7 @@ fun AppNavigation(tokenManager: TokenManager) {
                 )
             }
             composable(AppScreens.AddDoctorScreen.route){
-                AddDoctorScreen(onBackClick = { navController.popBackStack() })
+                AddDoctorScreen(addressViewModel = addressViewModel, onBackClick = { navController.popBackStack() })
             }
             /*composable(
                 route = AppScreens.DoctorDetailsScreen.route,
