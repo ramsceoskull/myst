@@ -81,6 +81,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel = viewMod
             Spacer(modifier = Modifier.height(10.dp))
 
             val email = emailInput(false)
+            Spacer(modifier = Modifier.height(6.dp))
             val password = passwordInput(false)
             val isFormValid = isValidEmail(email) && isValidPassword(password)
 
