@@ -16,8 +16,8 @@ android {
         applicationId = "com.tenko.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 6
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.firebase.appdistribution.gradle)
     implementation(libs.compose.material3)
+    implementation(libs.libphonenumber)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
