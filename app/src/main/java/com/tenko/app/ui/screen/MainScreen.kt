@@ -71,7 +71,7 @@ fun MainScreen(
                 scrollBehavior = scrollBehavior,
                 notificationViewModel = notificationViewModel,
                 authViewModel = authViewModel,
-                actions = { showNotifications = !showNotifications }
+//                actions = { showNotifications = !showNotifications }
             )
         },
         bottomBar = { BottomNavigationBar(navController) },
