@@ -44,7 +44,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -55,10 +54,12 @@ import com.tenko.app.data.api.TokenManager
 import com.tenko.app.data.serializable.UserUpdate
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.navigation.AppScreens
+import com.tenko.app.regex.isValidPassword
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.DeleteAccountRow
 import com.tenko.app.ui.components.InfoRow
 import com.tenko.app.ui.components.PhotoActionsSection
+import com.tenko.app.ui.components.passwordInput
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.PompAndPower
@@ -208,27 +209,35 @@ fun UpdateProfileScreen(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row {
                             TextButton(onClick = { showInput = false }) {
                                 Text("Cancelar", color = RaisinBlack)
                             }
-                            TextButton(onClick = {
-                                authViewModel.updateUser(UserUpdate(
-                                    name = newValue, initials =
-                                        if(initials.length == 2) initials
-                                        else newValue.take(2).uppercase())
-                                )
-                                scope.launch {
-                                    isRefreshing = true
-                                    delay(2000)
-                                    navController.popBackStack()
-                                    navController.navigate(AppScreens.UpdateProfileScreen.route)
-                                    isRefreshing = false
-                                }
-                                showInput = false
-                            }) {
-                                Text("Cambiar nombre", color = Tekhelet)
-                            }
+                            TextButton(
+                                onClick = {
+                                    if(newValue.isNotBlank()) {
+                                        authViewModel.updateUser(UserUpdate(
+                                            name = newValue, initials =
+                                                if(initials.length == 2) initials
+                                                else newValue.take(2).uppercase())
+                                        )
+                                        scope.launch {
+                                            isRefreshing = true
+                                            delay(2000)
+                                            isRefreshing = false
+                                        }
+                                        showInput = false
+                                    } else
+                                        Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = White,
+                                    containerColor = Tekhelet
+                                ),
+                                content = { Text("Cambiar nombre") }
+                            )
                         }
                     }
                 }
@@ -265,9 +274,11 @@ fun UpdateProfileScreen(
                         TextButton(
                             onClick = {
                                 if(password.isNotBlank()) {
-                                    Toast.makeText(context, "Eliminando cuenta...", Toast.LENGTH_SHORT).show()
-                                    authViewModel.deleteUser(password, tokenManager, navController)
-                                    showDialog = false
+                                    if(isValidPassword(password)) {
+                                        authViewModel.deleteUser(password, tokenManager, navController)
+                                        showDialog = false
+                                    } else
+                                        Toast.makeText(context, "La contraseña no cumple con los requisitos", Toast.LENGTH_SHORT).show()
                                 } else
                                     Toast.makeText(context, "Por favor, ingresa tu contraseña", Toast.LENGTH_SHORT).show()
                             },
@@ -302,36 +313,7 @@ fun UpdateProfileScreen(
                         Column {
                             Text("Esta acción no se puede deshacer.\nPor favor, ingresa tu contraseña para confirmar:")
                             Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = password,
-                                onValueChange = { newText ->
-                                    if(!newText.contains(" ")) {
-                                        password = newText
-                                    }
-                                },
-                                placeholder = { Text("Contraseña") },
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp),
-                                visualTransformation = PasswordVisualTransformation(),
-                                trailingIcon = {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.eye_slash_regular_full),
-                                        contentDescription = "Contraseña oculta",
-                                        modifier = Modifier.size(35.dp).padding(end = 4.dp)
-                                    )
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = AntiFlashWhite,
-                                    focusedBorderColor = PompAndPower,
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTrailingIconColor = PompAndPower,
-                                    unfocusedTrailingIconColor = SweetGrey,
-                                    unfocusedPlaceholderColor = Color.Gray,
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(66.dp)
-                            )
+                            password = passwordInput(false)
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
