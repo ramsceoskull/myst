@@ -320,3 +320,35 @@ fun passwordInput(showWarnings: Boolean = true): String {
 
     return password.trim()
 }
+
+@Composable
+fun numberInput(label: String = "Número", initialValue: String = "", modifier: Modifier = Modifier): String {
+    var number by remember { mutableStateOf(initialValue) }
+
+    OutlinedTextField(
+        value = number,
+        onValueChange = { newText ->
+            if(newText.all { it.isDigit() } && newText.length <= 5) {
+                number = newText
+            }
+        },
+        placeholder = { Text(text = label, fontSize = 14.sp) },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number
+        ),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = AntiFlashWhite,
+            focusedBorderColor = PompAndPower,
+            unfocusedBorderColor = Color.Transparent,
+            focusedTrailingIconColor = PompAndPower,
+            unfocusedTrailingIconColor = SweetGrey,
+            unfocusedPlaceholderColor = Color.Gray,
+        ),
+        modifier = modifier.height(66.dp)
+    )
+    Spacer(Modifier.height(6.dp))
+
+    return number.trim()
+}
