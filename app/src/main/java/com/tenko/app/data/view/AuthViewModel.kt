@@ -33,6 +33,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.parameters
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -205,9 +206,13 @@ class AuthViewModel : ViewModel() {
                 }
 
                 if (response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.OK) {
+                    Toast.makeText(navController.context, "Eliminando cuenta...", Toast.LENGTH_SHORT).show()
+                    delay(1500) // Pequeña pausa para que el usuario vea el mensaje
                     logout(tokenManager) {
                         navController.navigate(AppScreens.LoginScreen.route) { popUpTo(0) }
                     }
+                } else if(response.status == HttpStatusCode.BadRequest) {
+                    Toast.makeText(navController.context, "Contraseña incorrecta", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
