@@ -54,8 +54,8 @@ import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.SweetGrey
 
 @Composable
-fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin apellidos)"): Pair<String, String> {
-    var name by remember { mutableStateOf("") }
+fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin apellidos)", initialValue: String = ""): Pair<String, String> {
+    var name by remember { mutableStateOf(initialValue) }
     val initials by remember(name) {
         derivedStateOf {
             name
@@ -98,7 +98,7 @@ fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin ap
                 Icon(
                     modifier = Modifier.size(35.dp).padding(end = 4.dp),
                     painter = painterResource(id = R.drawable.user_regular_full),
-                    contentDescription = "Icono de sobre"
+                    contentDescription = "User icon"
                 )
         },
         colors = OutlinedTextFieldDefaults.colors(
@@ -113,14 +113,61 @@ fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin ap
             .fillMaxWidth()
             .height(66.dp)
     )
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(6.dp))
 
     return name to initials
 }
 
 @Composable
-fun emailInput(showWarnings: Boolean = true): String {
-    var email by remember { mutableStateOf("") }
+fun generalInput(label: String = "Nombre", initialValue: String = "", icon: Int? = null): String {
+    var name by remember { mutableStateOf(initialValue) }
+
+    OutlinedTextField(
+        value = name,
+        onValueChange = { newText ->
+            name = newText.split(" ")
+                .joinToString(" ") { word ->
+                    word.replaceFirstChar {
+                        if(it.isLowerCase()) it.titlecase() else it.toString()
+                    }
+                }
+        },
+        placeholder = { Text(text = label, fontSize = 14.sp) },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Words,
+            keyboardType = KeyboardType.Text
+        ),
+        trailingIcon = {
+            icon?.let {
+                Icon(
+                    modifier = Modifier.size(35.dp).padding(end = 4.dp),
+                    painter = painterResource(id = icon),
+                    contentDescription = "Building icon"
+                )
+            }
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = AntiFlashWhite,
+            focusedBorderColor = PompAndPower,
+            unfocusedBorderColor = Color.Transparent,
+            focusedTrailingIconColor = PompAndPower,
+            unfocusedTrailingIconColor = SweetGrey,
+            unfocusedPlaceholderColor = Color.Gray,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(66.dp)
+    )
+    Spacer(Modifier.height(6.dp))
+
+    return name
+}
+
+@Composable
+fun emailInput(showWarnings: Boolean = true, initialValue: String = ""): String {
+    var email by remember { mutableStateOf(initialValue) }
     var emailError by remember { mutableStateOf(false) }
 
     val autofill = LocalAutofill.current
@@ -147,7 +194,7 @@ fun emailInput(showWarnings: Boolean = true): String {
             Icon(
                 modifier = Modifier.size(35.dp).padding(end = 4.dp),
                 painter = painterResource(id = R.drawable.envelope_regular_full),
-                contentDescription = "Icono de sobre"
+                contentDescription = "Envelope icon"
             )
         },
         colors = OutlinedTextFieldDefaults.colors(
@@ -193,7 +240,7 @@ fun emailInput(showWarnings: Boolean = true): String {
             )
         }
     }
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(6.dp))
 
     return email.trim()
 }
@@ -269,6 +316,7 @@ fun passwordInput(showWarnings: Boolean = true): String {
             }
         }
     }
+    Spacer(Modifier.height(6.dp))
 
     return password.trim()
 }
