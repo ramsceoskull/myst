@@ -4,17 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,7 +24,6 @@ import com.tenko.app.ui.components.AddContactButton
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.BottomNavigationBar
 import com.tenko.app.ui.components.DoctorCard
-import com.tenko.app.ui.components.ReminderSmallItem
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.CardDark
@@ -50,7 +44,6 @@ fun DoctorsScreen(
     }
 
     var selectedDoctorName by remember { mutableStateOf("") }
-    var currentDoctor = 0
 
     Scaffold(
         topBar = {
@@ -70,8 +63,8 @@ fun DoctorsScreen(
         ) {
             item { Spacer(modifier = Modifier.height(12.dp)) }
 
-            items(viewModel.contacts) { contact ->
-                val colors = when (currentDoctor % 5) {
+            itemsIndexed(viewModel.contacts) { i, contact ->
+                val colors = when (i % 5) {
                     0 -> listOf(CardGray, RaisinBlack, Color.Gray)
                     1 -> listOf(CardPurple, White, AntiFlashWhite)
                     2 -> listOf(Tekhelet, White, AntiFlashWhite)
@@ -79,18 +72,20 @@ fun DoctorsScreen(
                     else -> listOf(RaisinBlack, White, AntiFlashWhite)
                 }
 
-                DoctorCard(contact = contact, colors = colors) {
-                    selectedDoctorName = "${contact.name} ${contact.last_name}"
-                    viewModel.filterRemindersByContact(contact.id_contact)
-                }
-
-                currentDoctor++
+                DoctorCard(
+                    contact = contact,
+                    colors = colors,
+                    onClick = {
+                        selectedDoctorName = "${contact.name} ${contact.last_name}"
+                        viewModel.filterRemindersByContact(contact.id_contact)
+                    }
+                )
             }
 
             item { Spacer(modifier = Modifier.height(30.dp)) }
         }
 
-        if (selectedDoctorName.isNotEmpty()) {
+        /*if (selectedDoctorName.isNotEmpty()) {
             Spacer(Modifier.height(224.dp))
             HorizontalDivider(Modifier.padding(top = 16.dp))
             Text("Citas con: $selectedDoctorName", style = MaterialTheme.typography.displayLarge, color = Color(0xFF8E44AD))
@@ -98,12 +93,12 @@ fun DoctorsScreen(
             if (viewModel.filteredReminders.isEmpty()) {
                 Text("No hay recordatorios vinculados a este contacto.", modifier = Modifier.padding(top = 8.dp))
             } else {
-                LazyColumn(/*modifier = Modifier.weight(0.8f)*/) {
+                LazyColumn(*//*modifier = Modifier.weight(0.8f)*//*) {
                     items(viewModel.filteredReminders) { reminder ->
                         ReminderSmallItem(reminder)
                     }
                 }
             }
-        }
+        }*/
     }
 }
