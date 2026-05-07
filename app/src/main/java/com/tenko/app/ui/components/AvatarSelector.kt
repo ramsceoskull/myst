@@ -29,8 +29,8 @@ val femaleAvatars = listOf(
     R.drawable.doctor2
 )
 val maleAvatars = listOf(
-    R.drawable.doctor4,
     R.drawable.doctor3,
+    R.drawable.doctor4,
 )
 
 @Composable
