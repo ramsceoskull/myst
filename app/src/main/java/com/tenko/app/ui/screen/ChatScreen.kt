@@ -33,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import com.tenko.app.R
 import com.tenko.app.data.view.ChatViewModel
 import com.tenko.app.navigation.AppScreens
@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun ChatScreen(navController: NavHostController, viewModel: ChatViewModel = viewModel()) {
+fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewModel()) {
     val lastMessage = viewModel.messages.collectAsState().value.lastOrNull()
     val messages by viewModel.messages.collectAsState()
     val isTyping by viewModel.isTyping.collectAsState()
