@@ -1,5 +1,7 @@
 package com.tenko.app.data.view
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +48,7 @@ class DoctorViewModel : ViewModel() {
             executeWithRetry {
                 val response = ApiClient.client.get("https://api-myst.onrender.com/contacts/me")
                 if (response.status == HttpStatusCode.OK) {
+                    println("Fetch contacts successful: ${response.status}")
                     contacts = response.body()
                     true
                 } else false
@@ -53,7 +56,7 @@ class DoctorViewModel : ViewModel() {
         }
     }
 
-    fun createContact(contactData: ContactCreate) {
+    fun createContact(contactData: ContactCreate, context: Context) {
         viewModelScope.launch {
             isLoading = true
             executeWithRetry {
@@ -62,9 +65,13 @@ class DoctorViewModel : ViewModel() {
                     setBody(contactData)
                 }
                 if (response.status.isSuccess()) {
+                    Toast.makeText(context, "Doctor agregado exitosamente", Toast.LENGTH_SHORT).show()
                     fetchContacts()
                     true
-                } else false
+                } else {
+                    Toast.makeText(context, "Error al agregar doctor: ${response.status}", Toast.LENGTH_SHORT).show()
+                    false
+                }
             }
             isLoading = false
         }
