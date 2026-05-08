@@ -22,7 +22,12 @@ suspend fun getAddressByCP(cp: String): CpResponse? {
             val estado = json.getString("estado")
             val municipio = json.getString("municipio")
 
-            CpResponse(estado, municipio)
+            val asentamientosJson = json.getJSONArray("asentamientos")
+            val asentamientos = List(asentamientosJson.length()) { i ->
+                asentamientosJson.getJSONObject(i).getString("nombre")
+            }
+
+            CpResponse(estado, municipio, asentamientos)
         } catch (e: Exception) {
             e.printStackTrace()
             null
