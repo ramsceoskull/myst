@@ -30,4 +30,10 @@ class AddressViewModel : ViewModel() {
             it.copy(isSelected = it.id == id)
         }
     }
+
+    fun unselectAllAddresses() {
+        _addresses.replaceAll {
+            it.copy(isSelected = false)
+        }
+    }
 }
