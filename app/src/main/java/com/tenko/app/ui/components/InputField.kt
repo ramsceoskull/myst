@@ -324,15 +324,18 @@ fun passwordInput(showWarnings: Boolean = true): String {
 @Composable
 fun numberInput(label: String = "Número", initialValue: String = "", modifier: Modifier = Modifier): String {
     var number by remember { mutableStateOf(initialValue) }
+    var numberError by remember { mutableStateOf(false) }
 
     OutlinedTextField(
         value = number,
         onValueChange = { newText ->
             if(newText.all { it.isDigit() } && newText.length <= 5) {
+                numberError = newText.length != 5
                 number = newText
             }
         },
         placeholder = { Text(text = label, fontSize = 14.sp) },
+        isError = if(number.isBlank()) false else numberError,
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         keyboardOptions = KeyboardOptions(
@@ -346,7 +349,7 @@ fun numberInput(label: String = "Número", initialValue: String = "", modifier: 
             unfocusedTrailingIconColor = SweetGrey,
             unfocusedPlaceholderColor = Color.Gray,
         ),
-        modifier = modifier.height(66.dp)
+        modifier = modifier.height(66.dp).fillMaxWidth()
     )
     Spacer(Modifier.height(6.dp))
 
