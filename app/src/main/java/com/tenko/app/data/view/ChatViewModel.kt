@@ -123,11 +123,17 @@ class ChatViewModel : ViewModel() {
     private fun handleQuestionnaireResponse(text: String) {
         val currentQuestion = clinicalHistoryQuestions[currentQuestionIndex]
 
-        // Guardamos la respuesta (Aquí podrías mapear de "Sí" a true, etc.)
-        responses[currentQuestion.id] = text
+        // Normalización básica para campos booleanos
+        val processedValue: Any = when {
+            text.equals("Sí", true) -> true
+            text.equals("No", true) -> false
+            // Intentar convertir a Int si el campo es numérico (como abortos)
+            text.all { it.isDigit() } -> text.toIntOrNull() ?: text
+            else -> text
+        }
 
+        responses[currentQuestion.id] = processedValue
         currentQuestionIndex++
-
         askNextQuestion()
     }
 
