@@ -47,7 +47,7 @@ fun SquaredOptionSelector(
                 text = option.displayName,
                 selected = option == selectedOption,
                 onClick = { onOptionSelected(option) },
-                icon = if(selectedOption == Genre.FEMALE) R.drawable.venus_solid_full else R.drawable.mars_solid_full,
+                icon = if(option == Genre.FEMALE) R.drawable.venus_solid_full else R.drawable.mars_solid_full,
             )
         }
     }
