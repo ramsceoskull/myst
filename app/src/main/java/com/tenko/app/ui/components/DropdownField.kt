@@ -151,6 +151,7 @@ fun SpecialityDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxHeight(0.6f),
             containerColor = White,
             shape = RoundedCornerShape(12.dp),
         ) {
