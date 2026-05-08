@@ -22,7 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tenko.app.data.model.Address
+import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.ui.theme.Tekhelet
 
 @Composable
 fun AddressItem(
@@ -48,15 +51,22 @@ fun AddressItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             RadioButton(
                 selected = address.isSelected,
                 onClick = onSelect
             )
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(address.name, fontWeight = FontWeight.Bold)
-                Text("${address.street}, ${address.city}")
+                Text(
+                    text = address.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (address.isSelected) Tekhelet else RaisinBlack
+                )
+                Text(
+                    text = "${address.street}, ${address.zipCode} ${address.city}, ${address.state}",
+                    fontSize = 12.sp,
+                )
             }
 
             TextButton(onClick = onEdit) {
