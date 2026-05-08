@@ -56,7 +56,7 @@ class DoctorViewModel : ViewModel() {
         }
     }
 
-    fun createContact(contactData: ContactCreate, context: Context) {
+    fun createContact(contactData: ContactCreate, context: Context, onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
             executeWithRetry {
@@ -67,6 +67,7 @@ class DoctorViewModel : ViewModel() {
                 if (response.status.isSuccess()) {
                     Toast.makeText(context, "Doctor agregado exitosamente", Toast.LENGTH_SHORT).show()
                     fetchContacts()
+                    onSuccess()
                     true
                 } else {
                     Toast.makeText(context, "Error al agregar doctor: ${response.status}", Toast.LENGTH_SHORT).show()
