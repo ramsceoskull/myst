@@ -64,9 +64,8 @@ fun BottomBar(onSend: (String) -> Unit, isNumeric: Boolean = false) {
 fun BottomBar(
     onNextStep: () -> Unit,
     onPreviousStep: () -> Unit,
-    onFinalStep: () -> Unit,
     currentStep: Int,
-    totalSteps: Int = 3
+    totalSteps: Int
 ) {
     val progress = (currentStep + 1) / totalSteps.toFloat()
 
@@ -94,7 +93,7 @@ fun BottomBar(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 LinearProgressIndicator(
-                    progress = { progress }, // Asumiendo 4 pasos totales
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp),
@@ -104,83 +103,34 @@ fun BottomBar(
                 )
                 Text("Paso ${currentStep + 1} de $totalSteps")
 
-                when(currentStep) {
-                    0 -> {
-                        Button(
-                            onClick = { onNextStep() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Tekhelet,
-                                contentColor = White
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.width(200.dp).padding(vertical = 8.dp),
-                            content = {
-                                Text("Siguiente")
-                            }
-                        )
-                    }
-                    1 -> {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                            Button(
-                                onClick = { onPreviousStep() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Tekhelet,
-                                    contentColor = White
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
-                                content = {
-                                    Text("Atrás")
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Button(
-                                onClick = { onNextStep() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Tekhelet,
-                                    contentColor = White
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
-                                content = {
-                                    Text("Siguiente")
-                                }
-                            )
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Button(
+                        onClick = { onPreviousStep() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Tekhelet,
+                            contentColor = White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                        content = {
+                            Text(if(currentStep > 0) "Atrás" else "Regresar")
                         }
-                    }
-                    2 -> {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                            Button(
-                                onClick = { onPreviousStep() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Tekhelet,
-                                    contentColor = White
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
-                                content = {
-                                    Text("Atrás")
-                                }
-                            )
+                    )
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                            Button(
-                                onClick = { onFinalStep() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Tekhelet,
-                                    contentColor = White
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.weight(1f).padding(vertical = 8.dp),
-                                content = {
-                                    Text("Finalizar")
-                                }
-                            )
+                    Button(
+                        onClick = { onNextStep() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Tekhelet,
+                            contentColor = White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                        content = {
+                            Text(if(currentStep < totalSteps - 1) "Siguiente" else "Finalizar")
                         }
-                    }
+                    )
                 }
             }
         }
