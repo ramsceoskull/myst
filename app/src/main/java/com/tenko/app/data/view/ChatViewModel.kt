@@ -235,6 +235,49 @@ class ChatViewModel : ViewModel() {
         )
     }
 
+    fun loadClinicalHistory() {
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+                if (response.status == HttpStatusCode.OK) {
+                    val data = response.body<ClinicalHistoryResponse>()
+
+                    // Mapeamos de RESPONSE (lo que viene del server) a UPDATE (lo que es editable)
+                    _historyState.value = ClinicalHistoryUpdate(
+                        last_name = data.last_name,
+                        second_last_name = data.second_last_name,
+                        birthdate = data.birthdate,
+                        sex_legally = data.sex_legally,
+                        sex_biology = data.sex_biology,
+                        depression_screening = data.depression_screening,
+                        depression = data.depression,
+                        memory_screening = data.memory_screening,
+                        memory_alterations = data.memory_alterations,
+                        dementia = data.dementia,
+                        urinary_incontinence_screening = data.urinary_incontinence_screening,
+                        urinary_incontinence = data.urinary_incontinence,
+                        anemia_screening = data.anemia_screening,
+                        obesity_screening = data.obesity_screening,
+                        osteoporosis_screening = data.osteoporosis_screening,
+                        diabetes_mellitus = data.diabetes_mellitus,
+                        arterial_hypertension = data.arterial_hypertension,
+                        sustance_use = data.sustance_use,
+                        std = data.std,
+                        turner_syndrome_screening = data.turner_syndrome_screening,
+                        endometriosis_screening = data.endometriosis_screening,
+                        endometriosis = data.endometriosis,
+                        pcos_screening = data.pcos_screening,
+                        pcos = data.pcos,
+                        sexually_active = data.sexually_active,
+                        miscarriages_abortions = data.miscarriages_abortions
+                    )
+                }
+            } catch (e: Exception) {
+                // Manejar error de carga
+            }
+        }
+    }
+
     fun saveClinicalHistory() {
         viewModelScope.launch {
             _isTyping.value = true
