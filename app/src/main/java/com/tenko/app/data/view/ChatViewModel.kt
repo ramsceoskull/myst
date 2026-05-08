@@ -7,6 +7,7 @@ import com.tenko.app.data.model.ClinicalQuestion
 import com.tenko.app.data.model.clinicalHistoryQuestions
 import com.tenko.app.data.serializable.AssistantResponse
 import com.tenko.app.data.serializable.ChatMessage
+import com.tenko.app.data.serializable.ClinicalHistoryResponse
 import com.tenko.app.data.serializable.ClinicalHistoryUpdate
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -34,6 +35,15 @@ class ChatViewModel : ViewModel() {
     var isQuestionnaireMode = false
     private var currentQuestionIndex = 0
     private val responses = mutableMapOf<String, Any>()
+
+    private val _historyState = MutableStateFlow<ClinicalHistoryUpdate?>(null)
+    val historyState: StateFlow<ClinicalHistoryUpdate?> = _historyState
+
+    // Estado para manejar la carga y los datos
+    private val _historyData = MutableStateFlow<ClinicalHistoryResponse?>(null)
+    val historyData: StateFlow<ClinicalHistoryResponse?> = _historyData
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     init {
         // Mensaje de bienvenida inicial
@@ -137,7 +147,95 @@ class ChatViewModel : ViewModel() {
         askNextQuestion()
     }
 
-    private fun saveClinicalHistory() {
+    // Nueva función de guardado que acepta el objeto directo desde la UI
+    fun updateSingleField(fieldName: String, newValue: Any?) {
+        viewModelScope.launch {
+            try {
+                // 1. Creamos un objeto Update vacío
+                // 2. Usamos una técnica de mapeo o una instancia con un solo campo
+                // Nota: ClinicalHistoryUpdate permite nulos, así que solo mandamos lo que cambia
+
+                val updatePayload = when (fieldName) {
+                    "last_name" -> ClinicalHistoryUpdate(last_name = newValue as? String)
+                    "second_last_name" -> ClinicalHistoryUpdate(second_last_name = newValue as? String)
+                    "birthdate" -> ClinicalHistoryUpdate(birthdate = (newValue as? String)?.let { java.time.LocalDate.parse(it) })
+                    "sex_legally" -> ClinicalHistoryUpdate(sex_legally = newValue as? String)
+                    "sex_biology" -> ClinicalHistoryUpdate(sex_biology = newValue as? String)
+                    "depression_screening" -> ClinicalHistoryUpdate(depression_screening = newValue as? Boolean)
+                    "depression" -> ClinicalHistoryUpdate(depression = newValue as? Boolean)
+                    "memory_screening" -> ClinicalHistoryUpdate(memory_screening = newValue as? Boolean)
+                    "memory_alterations" -> ClinicalHistoryUpdate(memory_alterations = newValue as? Boolean)
+                    "dementia" -> ClinicalHistoryUpdate(dementia = newValue as? Boolean)
+                    "urinary_incontinence_screening" -> ClinicalHistoryUpdate(urinary_incontinence_screening = newValue as? Boolean)
+                    "urinary_incontinence" -> ClinicalHistoryUpdate(urinary_incontinence = newValue as? Boolean)
+                    "anemia_screening" -> ClinicalHistoryUpdate(anemia_screening = newValue as? Boolean)
+                    "obesity_screening" -> ClinicalHistoryUpdate(obesity_screening = newValue as? Boolean)
+                    "osteoporosis_screening" -> ClinicalHistoryUpdate(osteoporosis_screening = newValue as? Boolean)
+                    "diabetes_mellitus" -> ClinicalHistoryUpdate(diabetes_mellitus = newValue as? String)
+                    "arterial_hypertension" -> ClinicalHistoryUpdate(arterial_hypertension = newValue as? Boolean)
+                    "sustance_use" -> ClinicalHistoryUpdate(sustance_use = (newValue as? String)?.split(", ")?.map { it.trim() })
+                    "std" -> ClinicalHistoryUpdate(std = (newValue as? String)?.split(", ")?.map { it.trim() })
+                    "turner_syndrome_screening" -> ClinicalHistoryUpdate(turner_syndrome_screening = newValue as? Boolean)
+                    "endometriosis_screening" -> ClinicalHistoryUpdate(endometriosis_screening = newValue as? Boolean)
+                    "endometriosis" -> ClinicalHistoryUpdate(endometriosis = newValue as? Boolean)
+                    "pcos_screening" -> ClinicalHistoryUpdate(pcos_screening = newValue as? Boolean)
+                    "pcos" -> ClinicalHistoryUpdate(pcos = newValue as? Boolean)
+                    "sexually_active" -> ClinicalHistoryUpdate(sexually_active = newValue as? Boolean)
+                    "miscarriages_abortions" -> ClinicalHistoryUpdate(miscarriages_abortions = newValue as? Int)
+                    else -> null
+                }
+
+                if (updatePayload != null) {
+                    val response = ApiClient.client.patch("https://api-myst.onrender.com/clinical-history/me") {
+                        contentType(ContentType.Application.Json)
+                        setBody(updatePayload)
+                    }
+
+                    if (response.status.isSuccess()) {
+                        // Actualizamos el estado local para que la UI se refresque instantáneamente
+                        val updatedHistory = response.body<ClinicalHistoryResponse>()
+                        syncLocalState(updatedHistory)
+                    }
+                }
+            } catch (e: Exception) {
+                println("Error al actualizar campo: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    // Función auxiliar para mantener la UI sincronizada
+    private fun syncLocalState(data: ClinicalHistoryResponse) {
+        _historyState.value = ClinicalHistoryUpdate(
+            last_name = data.last_name,
+            second_last_name = data.second_last_name,
+            birthdate = data.birthdate,
+            sex_legally = data.sex_legally,
+            sex_biology = data.sex_biology,
+            depression_screening = data.depression_screening,
+            depression = data.depression,
+            memory_screening = data.memory_screening,
+            memory_alterations = data.memory_alterations,
+            dementia = data.dementia,
+            urinary_incontinence_screening = data.urinary_incontinence_screening,
+            urinary_incontinence = data.urinary_incontinence,
+            anemia_screening = data.anemia_screening,
+            obesity_screening = data.obesity_screening,
+            osteoporosis_screening = data.osteoporosis_screening,
+            diabetes_mellitus = data.diabetes_mellitus,
+            arterial_hypertension = data.arterial_hypertension,
+            sustance_use = data.sustance_use,
+            std = data.std,
+            turner_syndrome_screening = data.turner_syndrome_screening,
+            endometriosis_screening = data.endometriosis_screening,
+            endometriosis = data.endometriosis,
+            pcos_screening = data.pcos_screening,
+            pcos = data.pcos,
+            sexually_active = data.sexually_active,
+            miscarriages_abortions = data.miscarriages_abortions
+        )
+    }
+
+    fun saveClinicalHistory() {
         viewModelScope.launch {
             _isTyping.value = true
             var retryCount = 0
@@ -233,6 +331,26 @@ class ChatViewModel : ViewModel() {
             // Manejo de Int: Asegurar que sea numérico
             miscarriages_abortions = (responses["miscarriages_abortions"] as? String)?.toIntOrNull() ?: 0
         )
+    }
+
+    fun fetchMyHistory() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+
+                if (response.status == HttpStatusCode.OK) {
+                    _historyData.value = response.body<ClinicalHistoryResponse>()
+                } else if (response.status == HttpStatusCode.NotFound) {
+                    // El usuario no tiene historial aún, podemos inicializar uno vacío
+                    _historyData.value = null
+                }
+            } catch (e: Exception) {
+                // Error de conexión
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     private fun formatAssistantSpeech(response: AssistantResponse): String {
