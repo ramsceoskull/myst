@@ -58,6 +58,7 @@ val clinicalHistoryQuestions = listOf(
     // Selección Múltiple (Checkboxes)
     ClinicalQuestion("sustance_use", "¿Consume alguna de estas sustancias?", AnswerType.MultiChoice(
         options = mapOf(
+            "none" to "Ninguna",
             "alcohol" to "Alcohol",
             "caffeine" to "Cafeína",
             "nicotine" to "Nicotina",
