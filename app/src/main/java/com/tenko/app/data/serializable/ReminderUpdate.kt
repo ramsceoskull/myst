@@ -11,16 +11,13 @@ data class ReminderUpdate(
     val description: String? = null,
 
     @Serializable(with = LocalDateSerializer::class)
-    val start_date: LocalDate,
+    val start_date: LocalDate? = null,
 
     @Serializable(with = LocalDateSerializer::class)
-    val end_date: LocalDate,
+    val end_date: LocalDate? = null,
 
     @Serializable(with = LocalTimeSerializer::class)
-    val start_time: LocalTime,
-
-    @Serializable(with = LocalTimeSerializer::class)
-    val end_time: LocalTime,
+    val day_time: LocalTime? = null,
 
     val type: Boolean? = null,
     val dosage: String? = null,

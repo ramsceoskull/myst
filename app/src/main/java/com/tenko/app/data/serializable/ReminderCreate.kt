@@ -14,16 +14,13 @@ data class ReminderCreate(
     val start_date: LocalDate,
 
     @Serializable(with = LocalDateSerializer::class)
-    val end_date: LocalDate,
+    val end_date: LocalDate? = null,
 
     @Serializable(with = LocalTimeSerializer::class)
-    val start_time: LocalTime,
-
-    @Serializable(with = LocalTimeSerializer::class)
-    val end_time: LocalTime,
+    val day_time: LocalTime? = null,
 
     val type: Boolean? = null,
     val dosage: String? = null,
-    val after_meal: Boolean? = null,
+    val after_meal: Boolean = false,
     val status: Int? = null
 )
