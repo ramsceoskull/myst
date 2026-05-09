@@ -16,15 +16,19 @@ import androidx.navigation.navArgument
 import com.tenko.app.data.api.TokenManager
 import com.tenko.app.data.view.AddressViewModel
 import com.tenko.app.data.view.AuthViewModel
+import com.tenko.app.data.view.DoctorViewModel
 import com.tenko.app.data.view.MedicineViewModel
 import com.tenko.app.data.view.NotificationViewModel
 import com.tenko.app.ui.components.NotificationsOverlay
 import com.tenko.app.ui.screen.AddDoctorScreen
 import com.tenko.app.ui.screen.AddMedicationScreen
+import com.tenko.app.ui.screen.AddMedicineScreen
+import com.tenko.app.ui.screen.AddMedicationScreen
 import com.tenko.app.ui.screen.AllNotificationsScreen
 import com.tenko.app.ui.screen.CalendarScreen
 import com.tenko.app.ui.screen.ChatScreen
 import com.tenko.app.ui.screen.ClinicalHistoryScreen
+import com.tenko.app.ui.screen.DoctorDetailsScreen
 import com.tenko.app.ui.screen.DoctorsScreen
 import com.tenko.app.ui.screen.EmailSentScreen
 import com.tenko.app.ui.screen.LoginScreen
@@ -41,9 +45,8 @@ import com.tenko.app.ui.screen.UpdateProfileScreen
 fun AppNavigation(tokenManager: TokenManager) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
+    val doctorViewModel: DoctorViewModel = viewModel()
     val notificationViewModel = viewModel<NotificationViewModel>()
-    val medicineViewModel = viewModel<MedicineViewModel>()
-    val addressViewModel = viewModel<AddressViewModel>()
 
     val context = LocalContext.current
 
@@ -57,10 +60,11 @@ fun AppNavigation(tokenManager: TokenManager) {
     // Observamos el token del DataStore
     val token by tokenManager.getToken.collectAsState(initial = "loading")
 
-    if(isChecking || token == "loading") {
+    if (isChecking || token == "loading") {
         SplashScreen()
     } else {
-        val startTrigger = if(token == null || currentUser == null) AppScreens.LoginScreen.route else AppScreens.MainScreen.route
+        val startTrigger =
+            if (token == null || currentUser == null) AppScreens.LoginScreen.route else AppScreens.MainScreen.route
 
         NavHost(
             navController = navController,
@@ -69,20 +73,39 @@ fun AppNavigation(tokenManager: TokenManager) {
             composable(AppScreens.SplashScreen.route) { SplashScreen() }
             composable(AppScreens.SignupScreen.route) { SignupScreen(navController, authViewModel) }
             composable(AppScreens.LoginScreen.route) { LoginScreen(navController, authViewModel) }
-            composable(AppScreens.ProfileScreen.route) { ProfileScreen(navController, authViewModel) }
-            composable(AppScreens.ReportsScreen.route) { ReportsScreen(navController, authViewModel) }
-            composable(AppScreens.ClinicalHistoryScreen.route) { ClinicalHistoryScreen(navController, authViewModel) }
-            composable(AppScreens.UpdateProfileScreen.route) { UpdateProfileScreen(navController, authViewModel, tokenManager) }
+            composable(AppScreens.ProfileScreen.route) {
+                ProfileScreen(
+                    navController,
+                    authViewModel
+                )
+            }
+            composable(AppScreens.ReportsScreen.route) {
+                ReportsScreen(
+                    navController,
+                    authViewModel
+                )
+            }
+//            composable(AppScreens.ClinicalHistoryScreen.route) { ClinicalHistoryScreen(navController, authViewModel) }
+            composable(AppScreens.ClinicalHistoryScreen.route) { ClinicalHistoryScreen(navController) }
+            composable(AppScreens.UpdateProfileScreen.route) {
+                UpdateProfileScreen(
+                    navController,
+                    authViewModel,
+                    tokenManager
+                )
+            }
             composable(AppScreens.ChatScreen.route) { ChatScreen(navController) }
             composable(AppScreens.CalendarScreen.route) { CalendarScreen(navController) }
             composable(AppScreens.DoctorsScreen.route) { DoctorsScreen(navController) }
-            composable(AppScreens.AddMedicationScreen.route) {
-                AddMedicationScreen(
-                    viewModel = medicineViewModel,
-                    onClose = { navController.popBackStack() },
+            composable("add_test") { AddMedicineScreen() }
+            composable(AppScreens.AddMedicationScreen.route) { AddMedicationScreen(navController) }
+            composable(AppScreens.MainScreen.route) {
+                MainScreen(
+                    navController,
+                    authViewModel,
+                    notificationViewModel,
                 )
             }
-            composable(AppScreens.MainScreen.route) { MainScreen(navController, authViewModel, notificationViewModel, medicineViewModel) }
             composable("terms") {
                 PdfViewerScreen(
                     pdfUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
@@ -126,30 +149,51 @@ fun AppNavigation(tokenManager: TokenManager) {
                 )
             ) { backStackEntry ->
                 val notificationId = backStackEntry.arguments?.getInt("notificationId")
-                val notification = notificationViewModel.notifications.first { it.id == notificationId }
+                val notification =
+                    notificationViewModel.notifications.first { it.id == notificationId }
                 NotificationDetailScreen(notification)
             }
-            composable(AppScreens.ForgotPasswordScreen.route) {
+            composable(
+                route = AppScreens.ForgotPasswordScreen.route,
+                arguments = listOf(
+                    navArgument("emailId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val email = backStackEntry.arguments?.getString("emailId")
+
                 EmailSentScreen(
                     title = "Se te ha enviado un correo",
                     description = "Favor de revisar tu bandeja de entrada o tu carpeta de spam para restablecer tu contraseña",
                     actionLabel = "Iniciar Sesión",
+                    email = email,
                     onClick = { navController.navigate(AppScreens.LoginScreen.route) },
                     onResendClick = { /* Lógica para reenviar el correo */ }
                 )
             }
-            composable(AppScreens.ValidateEmailScreen.route) {
+            composable(
+                route = AppScreens.ValidateEmailScreen.route,
+                arguments = listOf(
+                    navArgument("emailId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val email = backStackEntry.arguments?.getString("emailId")
+
                 EmailSentScreen(
                     title = "Confirma tu correo electrónico",
-                    description = "Hemos enviado un correo de confirmación a tu bandeja de entrada. Por favor, revisa tu bandeja de entrada o tu carpeta de spam para activar tu cuenta.",
+                    description = "Hemos enviado un correo de confirmación a $email. Por favor, revisa tu bandeja de entrada o tu carpeta de spam para activar tu cuenta.",
                     actionLabel = "Abrir correo",
+                    email = email,
                     onClick = {
                         val intent = Intent(Intent.ACTION_MAIN).apply {
                             addCategory(Intent.CATEGORY_APP_EMAIL)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
 
-                        if(intent.resolveActivity(context.packageManager) != null) {
+                        if (intent.resolveActivity(context.packageManager) != null) {
                             context.startActivity(intent)
                         } else {
                             // Si no hay una app de correo, simplemente volvemos al login
@@ -159,10 +203,8 @@ fun AppNavigation(tokenManager: TokenManager) {
                     onResendClick = { /* Lógica para reenviar el correo */ }
                 )
             }
-            composable(AppScreens.AddDoctorScreen.route){
-                AddDoctorScreen(addressViewModel = addressViewModel, onBackClick = { navController.popBackStack() })
-            }
-            /*composable(
+            composable(AppScreens.AddDoctorScreen.route) { AddDoctorScreen(onBackClick = { navController.popBackStack() }) }
+            composable(
                 route = AppScreens.DoctorDetailsScreen.route,
                 arguments = listOf(
                     navArgument("doctorId") {
@@ -170,13 +212,14 @@ fun AppNavigation(tokenManager: TokenManager) {
                     }
                 )
             ) { backStackEntry ->
+                doctorViewModel.fetchContacts() // Aseguramos que la lista de contactos esté actualizada
                 val doctorId = backStackEntry.arguments?.getInt("doctorId")
-                val doctor = doctorsList.find { it.id == doctorId }
+                val doctor = doctorViewModel.contacts.find { it.id_contact == doctorId }
 
                 doctor?.let {
                     DoctorDetailsScreen(navController, it)
                 }
-            }*/
+            }
         }
     }
 }
