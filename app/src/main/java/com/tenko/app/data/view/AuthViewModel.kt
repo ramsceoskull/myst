@@ -1,5 +1,6 @@
 package com.tenko.app.data.view
 
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.runtime.getValue
@@ -81,7 +82,12 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun login(email: String, password: String, navController: NavController, tokenManager: TokenManager) {
+    fun login(
+        email: String,
+        password: String,
+        navController: NavController,
+        tokenManager: TokenManager
+    ) {
         viewModelScope.launch {
             isLoading = true
             loginError = null
@@ -100,13 +106,23 @@ class AuthViewModel : ViewModel() {
 
                     // 2. OBTENER PERFIL INMEDIATO
                     // Inyectamos el token manualmente para evitar el lag de DataStore en esta petición
-                    val userResponse = ApiClient.client.get("https://api-myst.onrender.com/users/me") {
-                        headers { append(HttpHeaders.Authorization, "Bearer ${tokenData.access_token}") }
-                    }
+                    val userResponse =
+                        ApiClient.client.get("https://api-myst.onrender.com/users/me") {
+                            headers {
+                                append(
+                                    HttpHeaders.Authorization,
+                                    "Bearer ${tokenData.access_token}"
+                                )
+                            }
+                        }
 
                     if (userResponse.status == HttpStatusCode.OK) {
                         val user = userResponse.body<UserResponse>()
-                        Toast.makeText(navController.context, "¡Bienvenida, ${user.name}!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            navController.context,
+                            "¡Bienvenida, ${user.name}!",
+                            Toast.LENGTH_LONG
+                        ).show()
 
                         // 3. ACTUALIZAR MEMORIA PRIMERO (Para que la UI reaccione ya)
                         currentUser = user
@@ -176,7 +192,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun updateUser(updateData: UserUpdate) {
+    fun updateUser(updateData: UserUpdate, context: Context) {
         viewModelScope.launch {
             isLoading = true
             try {
@@ -186,17 +202,23 @@ class AuthViewModel : ViewModel() {
                 }
 
                 if (response.status == HttpStatusCode.OK) {
+                    Toast.makeText(context, "Perfil actualizado", Toast.LENGTH_SHORT).show()
                     currentUser = response.body<UserResponse>()
                 }
             } catch (e: Exception) {
                 loginError = "Error al actualizar datos"
+                Toast.makeText(context, loginError, Toast.LENGTH_SHORT).show()
             } finally {
                 isLoading = false
             }
         }
     }
 
-    fun deleteUser(passwordConfirm: String, tokenManager: TokenManager, navController: NavController) {
+    fun deleteUser(
+        passwordConfirm: String,
+        tokenManager: TokenManager,
+        navController: NavController
+    ) {
         viewModelScope.launch {
             isLoading = true
             try {
@@ -206,13 +228,21 @@ class AuthViewModel : ViewModel() {
                 }
 
                 if (response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.OK) {
-                    Toast.makeText(navController.context, "Eliminando cuenta...", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        navController.context,
+                        "Eliminando cuenta...",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     delay(1500) // Pequeña pausa para que el usuario vea el mensaje
                     logout(tokenManager) {
                         navController.navigate(AppScreens.LoginScreen.route) { popUpTo(0) }
                     }
-                } else if(response.status == HttpStatusCode.BadRequest) {
-                    Toast.makeText(navController.context, "Contraseña incorrecta", Toast.LENGTH_SHORT).show()
+                } else if (response.status == HttpStatusCode.BadRequest) {
+                    Toast.makeText(
+                        navController.context,
+                        "Contraseña incorrecta",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -228,14 +258,15 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             try {
-                val response = ApiClient.client.post("https://api-myst.onrender.com/auth/forgot-password") {
-                    contentType(ContentType.Application.Json)
-                    setBody(ForgotPasswordRequest(email))
-                }
+                val response =
+                    ApiClient.client.post("https://api-myst.onrender.com/auth/forgot-password") {
+                        contentType(ContentType.Application.Json)
+                        setBody(ForgotPasswordRequest(email))
+                    }
 
                 if (response.status == HttpStatusCode.OK) {
                     loginError = "Correo de recuperación enviado"
-                    navController.navigate(AppScreens.ForgotPasswordScreen.route)
+                    navController.navigate(AppScreens.ForgotPasswordScreen.createRoute(email))
                 }
             } catch (e: Exception) {
                 loginError = "Error de red"
@@ -280,10 +311,11 @@ class AuthViewModel : ViewModel() {
                 }
 
                 if (response.status == HttpStatusCode.Created) {
-                    navController.navigate(AppScreens.ValidateEmailScreen.route)
+                    navController.navigate(AppScreens.ValidateEmailScreen.createRoute(userData.email))
                 }
             } catch (e: Exception) {
                 loginError = "Error al crear cuenta"
+                Toast.makeText(navController.context, loginError, Toast.LENGTH_SHORT).show()
             } finally {
                 isLoading = false
             }
