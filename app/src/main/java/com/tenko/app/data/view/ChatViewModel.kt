@@ -14,6 +14,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -284,13 +285,14 @@ class ChatViewModel : ViewModel() {
             var retryCount = 0
             val maxAttempts = 3
             var success = false
+            lateinit var checkResponse : HttpResponse
 
             try {
                 // Creamos el objeto siguiendo tus reglas de negocio
                 val historyObject = mapResponsesToData()
 
                 while (retryCount < maxAttempts && !success) {
-                    val checkResponse = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+                    checkResponse = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
 
                     when (checkResponse.status) {
                         HttpStatusCode.OK -> {
@@ -321,7 +323,13 @@ class ChatViewModel : ViewModel() {
 
                 if (success) {
                     delay(3000) // Pequeña pausa para que el mensaje se vea antes de desaparecer el "typing"
-                    addAssistantMessage("¡Listo! He guardado tu historial clínico correctamente. ✨")
+
+                    val humanResponse = listOf(
+                        "¡Listo! He guardado tu historial clínico correctamente. ✨ Ahora que terminamos, ¿quieres contarme cómo te has sentido hoy o tienes alguna duda en la que pueda ayudarte?",
+                        "¡Historial actualizado! 💕 Ya quedó todo listo en tu perfil. ¿Hay algo más que quieras registrar hoy, como algún síntoma o cómo va tu día?",
+                        "He guardado todo con éxito. 🌸 Regresamos al chat normal; puedes preguntarme lo que quieras o contarme qué tal va tu semana."
+                    ).random()
+                    addAssistantMessage(humanResponse)
                     launch { ApiClient.client.post("https://api-myst.onrender.com/clinical-history/me/backfill-stats") }
                 } else {
                     addAssistantMessage("No pude guardar los datos. Verifica que todos los campos sean correctos.")
@@ -409,6 +417,15 @@ class ChatViewModel : ViewModel() {
                 "Listo, ya cerré el registro de este ciclo por ti. Que tengas un lindo día.",
                 "Entendido, anoté la fecha de finalización correctamente. ✅"
             ).random()
+
+            /*"end_questionnaire" -> listOf(
+                "¡Listo! He guardado tu historial clínico correctamente. ✨ Ahora que terminamos, ¿quieres contarme cómo te has sentido hoy o tienes alguna duda en la que pueda ayudarte?",
+                "¡Historial actualizado! 💕 Ya quedó todo listo en tu perfil. ¿Hay algo más que quieras registrar hoy, como algún síntoma o cómo va tu día?",
+                "He guardado todo con éxito. 🌸 Regresamos al chat normal; puedes preguntarme lo que quieras o contarme qué tal va tu semana.",
+                "¡Genial! He guardado toda la información que me diste. Gracias por mantener tu historial actualizado. 💕",
+                "¡Listo! He registrado todo en tu historial clínico. Si quieres actualizar algo más, solo dime.",
+                "Perfecto, ya quedó todo guardado. Estoy aquí para ayudarte a mantener tu salud al día. ✨"
+            ).random()*/
 
             else -> listOf( // Para síntomas o logs generales
                 "Gracias por compartirlo, ya guardé tus síntomas en el registro del día. 💕",
