@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.tenko.app.data.api.ApiClient
 import com.tenko.app.data.serializable.ContactCreate
 import com.tenko.app.data.serializable.ContactResponse
@@ -27,8 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class DoctorViewModel : ViewModel() {
-
-    // --- ESTADOS DE LA UI ---
     var contacts by mutableStateOf<List<ContactResponse>>(emptyList())
     var allReminders by mutableStateOf<List<ReminderResponse>>(emptyList())
     var filteredReminders by mutableStateOf<List<ReminderResponse>>(emptyList())
@@ -38,10 +37,14 @@ class DoctorViewModel : ViewModel() {
 
     var currentStep by mutableIntStateOf(0) // Para controlar el paso actual en la UI (contactos, recordatorios, etc.)
         private set
-    fun nextStep() { currentStep++ }
-    fun previousStep() { if (currentStep > 0) currentStep-- }
 
-    // --- OPERACIONES DE CONTACTOS (MÉDICOS) ---
+    fun nextStep() {
+        currentStep++
+    }
+
+    fun previousStep() {
+        if (currentStep > 0) currentStep--
+    }
 
     fun fetchContacts() {
         viewModelScope.launch {
@@ -65,12 +68,17 @@ class DoctorViewModel : ViewModel() {
                     setBody(contactData)
                 }
                 if (response.status.isSuccess()) {
-                    Toast.makeText(context, "Doctor agregado exitosamente", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Doctor agregado exitosamente", Toast.LENGTH_SHORT)
+                        .show()
                     fetchContacts()
                     onSuccess()
                     true
                 } else {
-                    Toast.makeText(context, "Error al agregar doctor: ${response.status}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Error al agregar doctor: ${response.status}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     false
                 }
             }
@@ -83,10 +91,11 @@ class DoctorViewModel : ViewModel() {
             isLoading = true
             executeWithRetry {
                 // PATCH a /contacts/me/{id}
-                val response = ApiClient.client.patch("https://api-myst.onrender.com/contacts/me/$idContact") {
-                    contentType(ContentType.Application.Json)
-                    setBody(updateData)
-                }
+                val response =
+                    ApiClient.client.patch("https://api-myst.onrender.com/contacts/me/$idContact") {
+                        contentType(ContentType.Application.Json)
+                        setBody(updateData)
+                    }
 
                 if (response.status.isSuccess()) {
                     fetchContacts() // Refrescamos la lista para ver los cambios
@@ -98,24 +107,48 @@ class DoctorViewModel : ViewModel() {
         }
     }
 
-    fun deleteContact(idContact: Int) {
+    fun deleteContact(idContact: Int, navController: NavController) {
         viewModelScope.launch {
             executeWithRetry {
-                val response = ApiClient.client.delete("https://api-myst.onrender.com/contacts/me/$idContact")
+                val response =
+                    ApiClient.client.delete("https://api-myst.onrender.com/contacts/me/$idContact")
                 if (response.status.isSuccess()) {
                     fetchContacts()
+                    Toast.makeText(
+                        navController.context,
+                        "Doctor eliminado exitosamente",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    true
+                } else {
+                    Toast.makeText(
+                        navController.context,
+                        "Error al eliminar doctor: ${response.status}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    false
+                }
+            }
+        }
+    }
+
+    fun fetchReminders() {
+        viewModelScope.launch {
+            executeWithRetry {
+                val response = ApiClient.client.get("https://api-myst.onrender.com/reminders/me")
+                if (response.status == HttpStatusCode.OK) {
+                    allReminders = response.body()
                     true
                 } else false
             }
         }
     }
 
-    // --- OPERACIONES DE RECORDATORIOS ---
-
-    fun fetchReminders() {
+    fun fetchContactReminders(id_contact: Int) {
         viewModelScope.launch {
             executeWithRetry {
-                val response = ApiClient.client.get("https://api-myst.onrender.com/reminders/me")
+                val response =
+                    ApiClient.client.get("https://api-myst.onrender.com/reminders/contact/${id_contact}")
                 if (response.status == HttpStatusCode.OK) {
                     allReminders = response.body()
                     true
