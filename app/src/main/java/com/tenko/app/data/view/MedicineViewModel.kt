@@ -5,9 +5,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tenko.app.data.model.Medicine
-import com.tenko.app.data.model.MedicineEvent
+import com.tenko.app.data.api.ApiClient
 import com.tenko.app.data.model.MedicineStatus
+import com.tenko.app.data.serializable.ReminderCreate
+import com.tenko.app.data.serializable.ReminderResponse
+import com.tenko.app.data.serializable.ReminderUpdate
+import io.ktor.client.call.body
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.patch
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,319 +29,165 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class MedicineViewModel : ViewModel() {
-    private val _medicines = MutableStateFlow<List<Medicine>>(emptyList())
-    val medicines: StateFlow<List<Medicine>> = _medicines
-    private var currentId = 0
+
+    // --- ESTADO DE DATOS (API) ---
+    private val _medicines = MutableStateFlow<List<ReminderResponse>>(emptyList())
+    val medicines: StateFlow<List<ReminderResponse>> = _medicines
+
+    // --- FILTROS Y CONTEOS ---
+    private val _filter = MutableStateFlow(MedicineStatus.PENDING)
+    val filter: StateFlow<MedicineStatus> = _filter
+
+    val filteredMedicines: StateFlow<List<ReminderResponse>> =
+        combine(_medicines, _filter) { meds, filter ->
+            when (filter) {
+                MedicineStatus.ALL -> meds
+                MedicineStatus.TAKEN -> meds.filter { it.status == 1 }
+                MedicineStatus.SKIPPED -> meds.filter { it.status == 2 }
+                MedicineStatus.PENDING -> meds.filter { it.status == 0 }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val counts: StateFlow<Map<MedicineStatus, Int>> =
         _medicines.map { meds ->
             mapOf(
                 MedicineStatus.ALL to meds.size,
-                MedicineStatus.TAKEN to meds.count { it.status == MedicineStatus.TAKEN },
-                MedicineStatus.SKIPPED to meds.count { it.status == MedicineStatus.SKIPPED },
-                MedicineStatus.PENDING to meds.count { it.status == MedicineStatus.PENDING }
+                MedicineStatus.TAKEN to meds.count { it.status == 1 },
+                MedicineStatus.SKIPPED to meds.count { it.status == 2 },
+                MedicineStatus.PENDING to meds.count { it.status == 0 }
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    private val _filter = MutableStateFlow(MedicineStatus.PENDING)
-    val filter: StateFlow<MedicineStatus> = _filter
+    // --- ESTADO DEL FORMULARIO ---
+    // Usamos ReminderCreate como base para el formulario
+    private val _uiState = MutableStateFlow(ReminderCreate(title = "", start_date = LocalDate.now()))
+    val uiState: StateFlow<ReminderCreate> = _uiState
 
-    val filteredMedicines: StateFlow<List<Medicine>> =
-        combine(_medicines, _filter) { meds, filter ->
-            when (filter) {
-                MedicineStatus.ALL -> meds
-                MedicineStatus.TAKEN -> meds.filter { it.status == MedicineStatus.TAKEN }
-                MedicineStatus.SKIPPED -> meds.filter { it.status == MedicineStatus.SKIPPED }
-                MedicineStatus.PENDING -> meds.filter { it.status == MedicineStatus.PENDING }
-            }
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            emptyList()
-        )
-
-    fun setFilter(filter: MedicineStatus) {
-        _filter.value = filter
-    }
-
-    // 🧠 Estado del formulario
-    private val _uiState = MutableStateFlow(Medicine())
-    val uiState: StateFlow<Medicine> = _uiState
-
-    var state by mutableStateOf(Medicine())
-        internal set
+    var isLoading by mutableStateOf(false)
     var isSaved by mutableStateOf(false)
-        private set
+    var errorMessage by mutableStateOf<String?>(null)
 
-    fun onEvent(event: MedicineEvent) {
-        when(event) {
-            is MedicineEvent.NameChanged -> { _uiState.update { it.copy(name = event.value) } }
-            is MedicineEvent.DoseChanged -> { _uiState.update { it.copy(dosage = event.value) } }
-            is MedicineEvent.UnitChanged -> { _uiState.update { it.copy(unit = event.value) } }
-            is MedicineEvent.DurationChanged -> { _uiState.update { it.copy(duration = event.value) } }
-            is MedicineEvent.ToggleFoodOption -> { _uiState.update { it.copy(afterMeal = !it.afterMeal) } }
-            is MedicineEvent.ToggleTimeDialog -> { _uiState.update { it.copy(showTimeDialog = !it.showTimeDialog) } }
-            is MedicineEvent.TimeFormatChanged -> { _uiState.update { it.copy(timeFormat = event.value) } }
-            is MedicineEvent.StartDateChanged -> { state = state.copy(startDate = event.value) }
-            is MedicineEvent.EndDateChanged -> { state = state.copy(endDate = event.value) }
-            is MedicineEvent.ReminderTimeChanged -> { state = state.copy(time = event.value) }
-            is MedicineEvent.AfterMealChanged -> { state = state.copy(afterMeal = event.value) }
-            MedicineEvent.Save -> { validateAndSave() }
-        }
-    }
+    // --- OPERACIONES API ---
 
-    private fun validateAndSave() {
-        var valid = true
-
-        if (_uiState.value.name.isBlank()) {
-            _uiState.update { it.copy(nameError = "Campo obligatorio") }
-            valid = false
-        }
-
-        /*if (_uiState.value.startDate.isEmpty() || _uiState.value.endDate.isEmpty()) {
-            _uiState.update { it.copy(dateError = "Selecciona fechas validas") }
-            valid = false
-        }*/
-
-        if (!valid) return
-
+    fun fetchMedicationReminders() {
         viewModelScope.launch {
-            addMedicine()
-
-            isSaved = true
+            isLoading = true
+            try {
+                val response = ApiClient.client.get("https://api-myst.onrender.com/reminders/medication")
+                if (response.status == HttpStatusCode.OK) {
+                    _medicines.value = response.body()
+                    errorMessage = null
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error al conectar con el servidor"
+            } finally {
+                isLoading = false
+            }
         }
     }
 
-    fun addMedicine(medicine: Medicine = Medicine()) {
-        val form = _uiState.value
-
-        val newMedicine = Medicine(
-            id = currentId++,
-            name = form.name,
-            description = medicine.description,
-            dosage = form.dosage,
-            unit = form.unit,
-            duration = form.duration,
-            startDate = form.startDate,
-            endDate = form.endDate,
-            times = form.times,
-            time = form.time,
-            timeFormat = form.timeFormat,
-            afterMeal = form.afterMeal,
-            status = MedicineStatus.PENDING
-        )
-
-        /*_medicines.update { current ->
-            current + newMedicine
-        }*/
-
-        _medicines.value += newMedicine
-
-        _uiState.value = Medicine() // reset form
+    private fun saveMedication() {
         viewModelScope.launch {
-            delay(2000)
-            isSaved = false
+            isLoading = true
+            try {
+                val form = _uiState.value.copy(type = true, status = 0)
+                val response = ApiClient.client.post("https://api-myst.onrender.com/reminders/medication") {
+                    contentType(ContentType.Application.Json)
+                    setBody(form)
+                }
+
+                if (response.status.isSuccess()) {
+                    isSaved = true
+                    fetchMedicationReminders() // Refrescar lista
+                    resetForm()
+                    delay(2000)
+                    isSaved = false
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error al guardar: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
         }
     }
 
-    fun onNameChange(value: String) {
-        _uiState.update { it.copy(name = value) }
+    fun updateReminderStatus(id: Int, newStatus: Int) {
+        viewModelScope.launch {
+            try {
+                val updateData = ReminderUpdate(status = newStatus)
+                val response = ApiClient.client.patch("https://api-myst.onrender.com/reminders/me/$id") {
+                    contentType(ContentType.Application.Json)
+                    setBody(updateData)
+                }
+                if (response.status.isSuccess()) {
+                    fetchMedicationReminders()
+                }
+            } catch (e: Exception) {
+                errorMessage = "No se pudo actualizar el estado"
+            }
+        }
+    }
+
+    fun deleteReminder(id: Int) {
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.client.delete("https://api-myst.onrender.com/reminders/me/$id")
+                if (response.status.isSuccess()) {
+                    fetchMedicationReminders()
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error al eliminar"
+            }
+        }
+    }
+
+    // --- MANEJO DE EVENTOS Y UI ---
+
+    fun onTitleChange(value: String) {
+        _uiState.update { it.copy(title = value) }
     }
 
     fun onDosageChange(value: String) {
         _uiState.update { it.copy(dosage = value) }
     }
 
-    fun onUnitChange(value: String) {
-        _uiState.update { it.copy(unit = value) }
-    }
-
-    fun onDurationChange(value: String) {
-        _uiState.update { it.copy(duration = value) }
-    }
-
-    fun toggleFoodOption() {
-        _uiState.update { it.copy(afterMeal = !it.afterMeal) }
-    }
-
-    fun toggleTimeDialog() {
-        _uiState.update { it.copy(showTimeDialog = !it.showTimeDialog) }
-    }
-
-    fun onTimeFormatChange(value: String) {
-        _uiState.update { it.copy(timeFormat = value) }
-    }
-
-    fun formatSelectedTime(hour: Int, minute: Int): String {
-        val localTime = LocalTime.of(hour, minute)
-        // Usamos el formato de 12h o 24h según prefieras, pero asegurando Localidad
-        val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
-        return localTime.format(formatter)
-    }
-
     fun onTimeSelected(hour: Int, minute: Int) {
-        // 1. Formateamos la hora para mostrar en la UI (Local)
-        val formattedTime = formatSelectedTime(hour, minute)
+        val selectedTime = LocalTime.of(hour, minute)
+        _uiState.update { it.copy(day_time = selectedTime) }
+    }
 
-        // 2. Determinamos AM/PM
-        val format = if (hour >= 12) "pm" else "am"
+    fun toggleAfterMeal() {
+        _uiState.update { it.copy(after_meal = !it.after_meal) }
+    }
 
-        _uiState.update {
-            it.copy(
-                time = formattedTime,
-                timeFormat = format,
-                showTimeDialog = false // Cerramos el diálogo aquí
-            )
+    fun validateAndSave() {
+        if (_uiState.value.title.isBlank()) {
+            errorMessage = "El nombre es obligatorio"
+            return
         }
+        saveMedication()
     }
 
-//    Prueba de actualización de campos individuales (no recomendado, pero ilustrativo)
-    /*fun onNameChange(name: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(name = name)
-        }
+    fun setFilter(filter: MedicineStatus) {
+        _filter.value = filter
     }
 
-    fun onDosageChange(dosage: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(dosage = dosage)
-        }
-    }
-
-    fun onDurationChange(duration: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(duration = duration)
-        }
-    }
-
-    fun onTimeChange(time: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(time = time)
-        }
-    }
-
-    fun onFoodChange(value: Boolean) {
-        _medicines.value = _medicines.value.map {
-            it.copy(afterMeal = value)
-        }
-    }
-
-    fun toggleTimeDialog() {
-        _medicines.value = _medicines.value.map {
-            it.copy(showTimeDialog = !it.showTimeDialog)
-        }
-    }
-
-    fun onTimeSelected(hour: Int, minute: Int) {
-        val formatted = "%02d:%02d".format(hour, minute)
-        _medicines.value = _medicines.value.map {
-            it.copy(time = formatted, showTimeDialog = false)
-        }
-    }*/
-
-    /*fun updateName(name: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(name = name)
-        }
-    }
-
-    fun updateDosage(dosage: String, duration: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(
-                dosage = dosage,
-                duration = duration
-            )
-        }
-    }
-
-    fun updateDates(start: LocalDate, end: LocalDate) {
-        _medicines.value = _medicines.value.map {
-            it.copy(
-                startDate = start,
-                endDate = end
-            )
-        }
-    }
-
-    fun addTime(time: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(
-                times = it.times + time
-            )
-        }
-    }
-
-    fun removeTime(time: String) {
-        _medicines.value = _medicines.value.map {
-            it.copy(
-                times = it.times - time
-            )
-        }
-    }
-
-    fun setMealOption(afterMeal: Boolean) {
-        _medicines.value = _medicines.value.map {
-            it.copy(afterMeal = afterMeal)
-        }
-    }*/
-
-
-    fun markAsTaken(medicine: Medicine) {
-        updateStatus(medicine, MedicineStatus.TAKEN)
-    }
-
-    fun markAsSkipped(medicine: Medicine) {
-        updateStatus(medicine, MedicineStatus.SKIPPED)
-    }
-
-    fun deleteMedicine(medicine: Medicine) {
-        _medicines.value = _medicines.value.filter { it.id != medicine.id }
-    }
-
-    fun updateMedicine(updated: Medicine) {
-        _medicines.value = _medicines.value.map {
-            if (it.id == updated.id) updated else it
-        }
-    }
-
-    private fun updateStatus(medicine: Medicine, status: MedicineStatus) {
-        _medicines.value = _medicines.value.map {
-            if (it.id == medicine.id) it.copy(status = status) else it
-        }
-    }
-
-    /*init {
-        generateLargeMockData()
-    }
-
-    fun generateLargeMockData() {
-        val list = mutableListOf<Medicine>()
-
-        val statuses = listOf(
-            MedicineStatus.PENDING,
-            MedicineStatus.TAKEN,
-            MedicineStatus.SKIPPED,
+    private fun resetForm() {
+        _uiState.value = ReminderCreate(
+            title = "",
+            start_date = java.time.LocalDate.now(),
+            type = true
         )
+    }
 
-        for (i in 1..12) {
-            list.add(
-                Medicine(
-                    id = i,
-                    name = "Medicamento $i",
-                    description = "Dosis ${100 + i}mg",
-                    time = "${(6 + i % 12)}:00 ${if (i % 2 == 0) "AM" else "PM"}",
-                    afterMeal = i % 2 == 0,
-                    status = statuses[i % 3]
-                )
-            )
-        }
-
-        _medicines.value = list
-    }*/
+    fun formatDisplayTime(time: LocalTime?): String {
+        if (time == null) return "--:--"
+        return time.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
+    }
 }
-
