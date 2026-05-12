@@ -4,8 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CardMembership
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -41,13 +38,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tenko.app.R
 import com.tenko.app.data.api.TokenManager
-import com.tenko.app.data.serializable.UserResponse
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.navigation.AppScreens
 import com.tenko.app.ui.components.ActionCard
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.BottomNavigationBar
-import com.tenko.app.ui.components.MenuItem
 import com.tenko.app.ui.components.ProfilePicture
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
@@ -80,9 +75,7 @@ fun ProfileScreen(
                 onBackClick = { navController.popBackStack() },
             )
         },
-        bottomBar = {
-            BottomNavigationBar(navController)
-        },
+        bottomBar = { BottomNavigationBar(navController) },
         containerColor = BackgroundColor
     ) { paddingValues ->
         Column(
@@ -91,28 +84,80 @@ fun ProfileScreen(
                 .padding(paddingValues)
                 .background(White)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 25.dp, vertical = 30.dp),
+                .padding(horizontal = 20.dp, vertical = 30.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ProfileSection(user)
+            ProfilePicture(user?.picture?.toUri(), 200.dp)
 
-            PlanAndInviteSection()
+            Text(
+                text = user?.name ?: "Nombre de Usuario",
+                fontSize = 32.sp,
+                color = Tekhelet,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = StarsLove
+            )
 
-            MenuItem(R.drawable.file_pdf_solid_full, "Historial de reportes", {navController.navigate(AppScreens.ReportsScreen.route)})
-            MenuItem(R.drawable.folder_open_solid_full, "Historial clínico", {navController.navigate(AppScreens.ClinicalHistoryScreen.route)})
-            MenuItem(R.drawable.circle_question_solid_full, "Ayuda")
-            MenuItem(R.drawable.gear_solid_full, "Editar Perfil", {navController.navigate(AppScreens.UpdateProfileScreen.route)})
-            MenuItem(R.drawable.door_open_solid_full, "Cerrar sesión", { showDialog = true })
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .background(
+                        color = AntiFlashWhite,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ActionCard(
+                    icon = R.drawable.award_solid_full,
+                    title = "Prueba",
+                    subtitle = "Tipo de plan",
+                    modifier = Modifier.weight(1f)
+                )
 
-            if(showDialog)
+                ActionCard(
+                    icon = R.drawable.hand_holding_heart_solid_full,
+                    title = "Invita",
+                    subtitle = "A amistades",
+                    modifier = Modifier.weight(1f),
+//                    onClick = { }
+                )
+            }
+
+            ActionCard(
+                icon = R.drawable.file_pdf_solid_full,
+                title = "Historial de reportes",
+                onClick = { navController.navigate(AppScreens.ReportsScreen.route) }
+            )
+            ActionCard(
+                icon = R.drawable.folder_open_solid_full,
+                title = "Historial clínico",
+                onClick = { navController.navigate(AppScreens.ClinicalHistoryScreen.route) }
+            )
+            ActionCard(
+                icon = R.drawable.circle_question_solid_full,
+                title = "Ayuda"
+            )
+            ActionCard(
+                icon = R.drawable.gear_solid_full,
+                title = "Editar Perfil",
+                onClick = { navController.navigate(AppScreens.UpdateProfileScreen.route) }
+            )
+            ActionCard(
+                icon = R.drawable.door_open_solid_full,
+                title = "Cerrar sesión",
+                onClick = { showDialog = true }
+            )
+
+            if (showDialog)
                 AlertDialog(
                     onDismissRequest = { showDialog = false },
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                showDialog = false
-                                Toast.makeText(context, "Cerrando sesión...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Cerrando sesión...", Toast.LENGTH_SHORT)
+                                    .show()
                                 authViewModel.logout(
                                     tokenManager = tokenManager,
                                     onLogoutComplete = {
@@ -121,19 +166,20 @@ fun ProfileScreen(
                                         }
                                     }
                                 )
+                                showDialog = false
                             },
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.textButtonColors(
                                 contentColor = White,
                                 containerColor = Tekhelet
                             ),
-                            content =  { Text("Sí, salir") }
+                            content = { Text("Sí, salir") }
                         )
                     },
                     dismissButton = {
                         TextButton(
                             onClick = { showDialog = false },
-                            content =  { Text("Cancelar", color = SweetGrey) }
+                            content = { Text("Cancelar", color = SweetGrey) }
                         )
                     },
                     title = {
@@ -142,9 +188,9 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                modifier = Modifier.size(24.dp),
                                 painter = painterResource(R.drawable.door_open_solid_full),
-                                contentDescription = null,
+                                contentDescription = "Logout Icon",
+                                modifier = Modifier.size(24.dp),
                             )
                             Text("¿Cerrar sesión?")
                         }
@@ -156,50 +202,5 @@ fun ProfileScreen(
                     textContentColor = SweetGrey
                 )
         }
-    }
-}
-
-@Composable
-fun ProfileSection(user: UserResponse?) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        ProfilePicture(user?.picture?.toUri(), 200.dp)
-
-        Text(
-            text = user?.name ?: "Nombre de Usuario",
-            fontSize = 32.sp,
-            color = Tekhelet,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = StarsLove
-        )
-    }
-}
-
-@Composable
-fun PlanAndInviteSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = AntiFlashWhite,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        ActionCard(
-            icon = Icons.Default.CardMembership,
-            title = "Prueba",
-            subtitle = "Tipo de plan",
-        )
-
-        ActionCard(
-            icon = Icons.Default.Favorite,
-            title = "Invita",
-            subtitle = "A amistades",
-            onClick = {  }
-        )
     }
 }
