@@ -61,14 +61,13 @@ fun EmailSentScreen(
     title: String,
     description: String,
     actionLabel: String,
+    email: String?,
     onClick: () -> Unit,
     onResendClick: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        visible = true
-    }
+    LaunchedEffect(Unit) { visible = true }
 
     Column(
         modifier = Modifier
@@ -87,6 +86,14 @@ fun EmailSentScreen(
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
+        if (email != null) {
+            Text(
+                text = email,
+                fontSize = 14.sp,
+                fontStyle = FontStyle.Italic,
+                color = PompAndPower
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -232,9 +239,10 @@ fun ResendEmail(onResendClick: () -> Unit) {
 @Composable
 fun EmailSentScreenPreview() {
     EmailSentScreen(
-        title = "¡Correo enviado!",
+        title = "¡Tenko te ha enviado un correo!",
         description = "Revisa tu bandeja de entrada para restablecer tu contraseña.",
         actionLabel = "Volver al inicio",
+        email = "tenko@gmail.com",
         onClick = {},
         onResendClick = {}
     )
