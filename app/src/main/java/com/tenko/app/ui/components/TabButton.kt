@@ -21,23 +21,23 @@ import com.tenko.app.ui.theme.White
 fun TabButton(
     label: String,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
-        modifier = Modifier
-//            .weight(1f)
+        modifier = modifier
             .padding(4.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background( color = if (selected) White else Color.Transparent )
-            .clickable { onClick() }
-            .padding(8.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(color = if (selected) White else Color.Transparent)
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = if (selected) RaisinBlack else Color.Gray
+            color = if (selected) RaisinBlack else Color.Gray,
+            modifier = Modifier.padding(vertical = 12.dp)
         )
     }
 }
