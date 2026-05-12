@@ -2,7 +2,6 @@ package com.tenko.app.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,55 +51,55 @@ fun SuggestionsCard(navController: NavController) {
     Text(
         text = "Obten sugerencias de salud",
         fontSize = 20.sp,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(bottom = 8.dp)
+        fontWeight = FontWeight.SemiBold
     )
 
+    Spacer(modifier = Modifier.height(8.dp))
+
     Card(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(6.dp),
-        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .background(gradient)
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp),
+            verticalAlignment = Alignment.Bottom
         ) {
-            Row( verticalAlignment = Alignment.Bottom ) {
-                Image(
-                    contentDescription = "Tenko Avatar",
-                    painter = painterResource(R.drawable.tenko_avatar),
-                    modifier = Modifier.size(140.dp)
+            Image(
+                contentDescription = "Tenko Avatar",
+                painter = painterResource(R.drawable.tenko_avatar),
+                modifier = Modifier.size(140.dp)
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = "Algunas de tus preguntas pueden ser respondidas por tus especialistas, sin necesidad de una consulta formal.",
+                    fontSize = 14.sp,
                 )
 
-//                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-                Column(
+                Button(
+                    onClick = { navController.navigate(AppScreens.DoctorsScreen.route) },
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(bottom = 16.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = White,
+                        contentColor = Tekhelet
+                    )
                 ) {
                     Text(
-                        text = "Algunas de tus preguntas pueden ser respondidas por tus especialistas, sin necesidad de una consulta formal.",
-                        fontSize = 14.sp
+                        text = "Contactar a un doctor",
+                        fontSize = 12.sp
                     )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Button(
-                        onClick = { navController.navigate(AppScreens.DoctorsScreen.route) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = White
-                        ),
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                    ) {
-                        Text(
-                            text = "Contactar a un doctor",
-                            color = Tekhelet,
-                            fontSize = 12.sp
-                        )
-                    }
                 }
             }
         }
