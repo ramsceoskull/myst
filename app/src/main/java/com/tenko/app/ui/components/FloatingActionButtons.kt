@@ -9,6 +9,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
@@ -16,7 +17,7 @@ import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.White
 
 @Composable
-fun AddMedicationButton(onClick: () -> Unit) {
+fun FloatingActionButton(icon: Int, isColored: Boolean = true, onClick: () -> Unit) {
     FloatingActionButton(
         onClick = onClick,
         containerColor = PompAndPower
@@ -26,42 +27,18 @@ fun AddMedicationButton(onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(12.dp)
         ) {
-            Icon(
-                painter = painterResource(R.drawable.red_and_white_pills),
-                contentDescription = "Medication Icon",
-                tint = null,
-                modifier = Modifier.size(40.dp)
-            )
-            Icon(
-                painter = painterResource(R.drawable.plus_solid_full),
-                contentDescription = "Agregar medicación",
-                modifier = Modifier.size(25.dp),
-                tint = White
-            )
-        }
-    }
-}
+            val color = if (isColored) White else Color.Unspecified
 
-@Composable
-fun AddContactButton(onClick: () -> Unit) {
-    FloatingActionButton(
-        onClick = onClick,
-        containerColor = PompAndPower
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(12.dp)
-        ) {
             Icon(
-                painter = painterResource(R.drawable.address_book_solid_full),
-                contentDescription = "Address book Icon",
-                tint = White,
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = color,
                 modifier = Modifier.size(40.dp)
             )
+
             Icon(
                 painter = painterResource(R.drawable.plus_solid_full),
-                contentDescription = "Agregar contacto",
+                contentDescription = "Agregar",
                 modifier = Modifier.size(25.dp),
                 tint = White
             )
