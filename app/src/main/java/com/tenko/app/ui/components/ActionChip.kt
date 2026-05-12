@@ -2,7 +2,6 @@ package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,14 +21,13 @@ fun ActionChip(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         color = backgroundColor,
-        tonalElevation = 4.dp
+        contentColor = contentColor,
+        shadowElevation = 4.dp
     ) {
         Text(
             text = text,
-            color = contentColor,
             fontSize = 16.sp,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
 }
