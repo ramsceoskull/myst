@@ -30,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -72,9 +71,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tenko.app.R
 import com.tenko.app.data.api.getAddressByCP
 import com.tenko.app.data.api.loadCountries
-import com.tenko.app.data.model.Address
 import com.tenko.app.data.model.Genre
 import com.tenko.app.data.model.Speciality
+import com.tenko.app.data.serializable.AddressCreate
+import com.tenko.app.data.serializable.AddressResponse
 import com.tenko.app.data.serializable.ContactCreate
 import com.tenko.app.data.view.AddressViewModel
 import com.tenko.app.data.view.DoctorViewModel
@@ -85,7 +85,7 @@ import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.AvatarSelector
 import com.tenko.app.ui.components.BottomBar
 import com.tenko.app.ui.components.CountryDropdown
-import com.tenko.app.ui.components.DoctorCard
+import com.tenko.app.ui.components.FlipCard
 import com.tenko.app.ui.components.SpecialityDropdown
 import com.tenko.app.ui.components.SquaredOptionSelector
 import com.tenko.app.ui.components.blockedInput
@@ -95,6 +95,9 @@ import com.tenko.app.ui.components.nameInput
 import com.tenko.app.ui.components.numberInput
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
+import com.tenko.app.ui.theme.CardDark
+import com.tenko.app.ui.theme.CardGray
+import com.tenko.app.ui.theme.CardPurple
 import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.RaisinBlack
 import com.tenko.app.ui.theme.StarsLove
@@ -117,7 +120,7 @@ fun AddDoctorScreen(
     val context = LocalContext.current
 
     var screen by remember { mutableStateOf("list") }
-    var selectedAddress by remember { mutableStateOf<Address?>(null) }
+    var selectedAddress by remember { mutableStateOf<AddressResponse?>(null) }
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -131,14 +134,16 @@ fun AddDoctorScreen(
     var street by remember { mutableStateOf(selectedAddress?.street ?: "") }
     var city by remember { mutableStateOf(selectedAddress?.city ?: "") }
     var state by remember { mutableStateOf(selectedAddress?.state ?: "") }
-    var zipCode by remember { mutableStateOf(selectedAddress?.zipCode ?: "") }
+    var zipCode by remember { mutableStateOf(selectedAddress?.zip_code ?: "") }
     var neighborhood by remember { mutableStateOf(selectedAddress?.neighborhood ?: "") }
-    var phoneNumber by remember { mutableStateOf(selectedAddress?.phoneNumber ?: "") }
+    var phoneNumber by remember { mutableStateOf(selectedAddress?.phone_number ?: "") }
 
     val countries = loadCountries(context)
     var formatted by remember { mutableStateOf("") }
     var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
-    var selected by remember { mutableStateOf(countries.firstOrNull { it.iso == "MX" } ?: countries.first()) }
+    var selected by remember {
+        mutableStateOf(countries.firstOrNull { it.iso == "MX" } ?: countries.first())
+    }
 
     LaunchedEffect(city, state) {
         if (zipCode.length == 5 && city.isNotBlank() && state.isNotBlank() && neighborhood.isNotBlank()) {
@@ -148,43 +153,53 @@ fun AddDoctorScreen(
     }
 
     Scaffold(
-        topBar = { AppTopBar(if(screen == "form") "Mi clínica" else "Agregar Doctor") },
+        topBar = { AppTopBar(if (screen == "form") "Mi clínica" else "Agregar Doctor") },
         bottomBar = {
-            if(screen != "form") {
+            if (screen != "form") {
                 BottomBar(
                     onNextStep = {
-                        when(viewModel.currentStep) {
+                        when (viewModel.currentStep) {
                             0 -> {
-                                if(genre != null && avatar != null && name.isNotBlank() && lastName.isNotBlank() && email.isNotBlank() && speciality != null) {
+                                if (genre != null && avatar != null && name.isNotBlank() && lastName.isNotBlank() && email.isNotBlank() && speciality != null) {
                                     viewModel.nextStep()
                                 } else {
-                                    Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Por favor completa todos los campos",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
 //                                viewModel.nextStep()
                             }
+
                             1 -> {
-                                if(selectedAddress != null) {
+                                if (selectedAddress != null) {
                                     viewModel.nextStep()
                                 } else {
-                                    Toast.makeText(context, "Por favor selecciona o agrega una dirección para el consultorio", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Por favor selecciona o agrega una dirección para el consultorio",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
+
                             2 -> {
                                 val newContact = ContactCreate(
                                     name = name,
                                     last_name = lastName,
                                     email = email,
-                                    about = getAbout(speciality),
+                                    about = speciality?.description,
                                     specialty = speciality?.displayName,
                                     genre = avatar,
                                     phone_number = phoneNumber,
-                                    address = selectedAddress?.let { "${it.name},${it.street},${it.neighborhood},${it.zipCode},${it.city},${it.state}" }
+                                    address = selectedAddress?.let { "${it.name},${it.street},${it.neighborhood},${it.zip_code},${it.city},${it.state}" }
                                 )
                                 viewModel.createContact(newContact, context, onBackClick)
                             }
                         }
                     },
-                    onPreviousStep = { if(viewModel.currentStep > 0) viewModel.previousStep() else onBackClick() },
+                    onPreviousStep = { if (viewModel.currentStep > 0) viewModel.previousStep() else onBackClick() },
                     currentStep = viewModel.currentStep,
                     totalSteps = 3
                 )
@@ -211,43 +226,52 @@ fun AddDoctorScreen(
                         content = {
                             TextButton(
                                 onClick = {
-                                    if(label.isBlank() || street.isBlank() || city.isBlank() || state.isBlank() || zipCode.length != 5 || phoneNumber.length != 10) {
-                                        Toast.makeText(context, "Por favor completa todos los campos correctamente", Toast.LENGTH_SHORT).show()
+                                    if (label.isBlank() || street.isBlank() || city.isBlank() || state.isBlank() || zipCode.length != 5 || phoneNumber.length != 10) {
+                                        Toast.makeText(
+                                            context,
+                                            "Por favor completa todos los campos correctamente",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                         return@TextButton
                                     }
-                                    addressViewModel.unselectAllAddresses()
-                                    val address = Address(
-                                        id = selectedAddress?.id ?: -1,
+                                    val newAddress = AddressCreate(
                                         name = label,
                                         street = street,
                                         city = city,
                                         state = state,
-                                        zipCode = zipCode,
-                                        phoneNumber = phoneNumber,
+                                        zip_code = zipCode,
+                                        phone_number = phoneNumber,
                                         neighborhood = neighborhood,
-                                        isSelected = true
+                                        is_selected = true
                                     )
-                                    if (selectedAddress == null)
-                                        addressViewModel.addAddress(address)
-                                    else
-                                        addressViewModel.updateAddress(selectedAddress!!)
+                                    if (selectedAddress == null) {
+                                        addressViewModel.createAddress(newAddress) {
+                                            Toast.makeText(
+                                                context,
+                                                "Dirección agregada exitosamente",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                    /*else
+                                        addressViewModel.updateAddress(selectedAddress!!)*/
 
-                                    selectedAddress = address
+//                                    selectedAddress = newAddress
                                     screen = "list"
                                 },
+                                enabled = !addressViewModel.isLoading,
                                 modifier = Modifier
                                     .padding(16.dp)
                                     .fillMaxWidth()
                                     .height(66.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.textButtonColors(
-                                    containerColor = Tekhelet,
+                                    containerColor = PompAndPower,
                                     contentColor = White
                                 ),
                                 content = {
                                     Text(
                                         text = "Guardar dirección",
-                                        color = White,
                                         fontSize = 25.sp,
                                         fontFamily = StarsLove,
                                         fontWeight = FontWeight.ExtraLight,
@@ -314,7 +338,7 @@ fun AddDoctorScreen(
                                         genre = currentGenre,
                                         onAvatarChange = { genreTemp = it }
                                     )
-                                    avatar = when(genreTemp) {
+                                    avatar = when (genreTemp) {
                                         R.drawable.doctor0 -> 0
                                         R.drawable.doctor1 -> 1
                                         R.drawable.doctor2 -> 2
@@ -365,12 +389,24 @@ fun AddDoctorScreen(
                     1 -> {
                         when (screen) {
                             "list" -> {
-                                if(selectedAddress?.phoneNumber != null) {
-                                    formatted = formatAsYouType(raw = selectedAddress!!.phoneNumber, regionCode = selected.iso)
-                                    textFieldValue = TextFieldValue(text = formatted, selection = TextRange(formatted.length))
+                                addressViewModel.fetchMyAddresses()
+
+                                if (selectedAddress?.phone_number != null) {
+                                    formatted = formatAsYouType(
+                                        raw = selectedAddress!!.phone_number!!,
+                                        regionCode = selected.iso
+                                    )
+                                    textFieldValue = TextFieldValue(
+                                        text = formatted,
+                                        selection = TextRange(formatted.length)
+                                    )
                                 }
                                 Column(
-                                    modifier = Modifier.padding(start = 25.dp, end = 25.dp, top = 30.dp),
+                                    modifier = Modifier.padding(
+                                        start = 25.dp,
+                                        end = 25.dp,
+                                        top = 30.dp
+                                    ),
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
@@ -457,7 +493,7 @@ fun AddDoctorScreen(
                                         address = address,
                                         onSelect = {
                                             selectedAddress = address
-                                            addressViewModel.selectAddress(address.id)
+                                            addressViewModel.selectAddress(address.id_address)
                                         },
                                         onEdit = {
                                             selectedAddress = address
@@ -469,7 +505,10 @@ fun AddDoctorScreen(
 
                             "form" -> {
                                 Column(
-                                    modifier = Modifier.padding(horizontal = 25.dp, vertical = 30.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 25.dp,
+                                        vertical = 30.dp
+                                    ),
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     var isPhoneValid by remember { mutableStateOf(true) }
@@ -488,7 +527,11 @@ fun AddDoctorScreen(
                                         color = Color.Gray,
                                         fontSize = 14.sp
                                     )
-                                    label = generalInput("Ej: Hospital San Javier", selectedAddress?.name ?: "", R.drawable.hospital_regular_full)
+                                    label = generalInput(
+                                        "Ej: Hospital San Javier",
+                                        selectedAddress?.name ?: "",
+                                        R.drawable.hospital_regular_full
+                                    )
 
                                     Text(
                                         text = "Teléfono",
@@ -523,16 +566,30 @@ fun AddDoctorScreen(
                                             onValueChange = { input ->
                                                 // Solo números
                                                 val digits = input.text.filter { it.isDigit() }
-                                                if(digits.length <= 10) {
+                                                if (digits.length <= 10) {
                                                     phoneNumber = digits
 
                                                     // Formatear con el código del país
-                                                    formatted = formatAsYouType(raw = digits, regionCode = selected.iso)
-                                                    isPhoneValid = isValidNumber(number = digits, regionCode = selected.iso)
-                                                    textFieldValue = TextFieldValue(text = formatted, selection = TextRange(formatted.length)) // Mantener el cursor al final
+                                                    formatted = formatAsYouType(
+                                                        raw = digits,
+                                                        regionCode = selected.iso
+                                                    )
+                                                    isPhoneValid = isValidNumber(
+                                                        number = digits,
+                                                        regionCode = selected.iso
+                                                    )
+                                                    textFieldValue = TextFieldValue(
+                                                        text = formatted,
+                                                        selection = TextRange(formatted.length)
+                                                    ) // Mantener el cursor al final
                                                 }
                                             },
-                                            placeholder = { Text("Ej: 33 3225 8014", fontSize = 14.sp) },
+                                            placeholder = {
+                                                Text(
+                                                    "Ej: 33 3225 8014",
+                                                    fontSize = 14.sp
+                                                )
+                                            },
                                             singleLine = true,
                                             keyboardOptions = KeyboardOptions(
                                                 keyboardType = KeyboardType.Phone
@@ -559,10 +616,10 @@ fun AddDoctorScreen(
                                             modifier = Modifier.fillMaxHeight()
                                         )
                                     }
-                                    if(phoneNumber.isNotEmpty())
+                                    if (phoneNumber.isNotEmpty())
                                         Text(
-                                            text = "Número ${if(isPhoneValid) "completo" else "incompleto"}: ${selected.code} $formatted",
-                                            color = if(isPhoneValid) Color.LightGray else MaterialTheme.colorScheme.error,
+                                            text = "Número ${if (isPhoneValid) "completo" else "incompleto"}: ${selected.code} $formatted",
+                                            color = if (isPhoneValid) Color.LightGray else MaterialTheme.colorScheme.error,
                                             fontSize = 12.sp
                                         )
 
@@ -578,7 +635,10 @@ fun AddDoctorScreen(
                                         color = Color.LightGray,
                                         fontSize = 12.sp
                                     )
-                                    street = generalInput("Monte Everest 1081", selectedAddress?.street ?: "")
+                                    street = generalInput(
+                                        "Monte Everest 1081",
+                                        selectedAddress?.street ?: ""
+                                    )
 
                                     Text(
                                         text = "Ingresa el código postal del consultorio.",
@@ -590,34 +650,47 @@ fun AddDoctorScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Column(modifier = Modifier.weight(1f)) {
-                                            zipCode = numberInput("Ej: 44340", selectedAddress?.zipCode ?: "")
+                                            zipCode = numberInput(
+                                                "Ej: 44340",
+                                                selectedAddress?.zip_code ?: ""
+                                            )
                                             Text(
                                                 text = "Debe contener exactamente 5 dígitos",
-                                                color = if(zipCode.isEmpty() || zipCode.length == 5 || selectedAddress?.zipCode?.length == 5) Color.LightGray else MaterialTheme.colorScheme.error,
+                                                color = if (zipCode.isEmpty() || zipCode.length == 5 || selectedAddress?.zip_code?.length == 5) Color.LightGray else MaterialTheme.colorScheme.error,
                                                 fontSize = 12.sp
                                             )
                                         }
 
                                         IconButton(
                                             onClick = {
-                                                if(zipCode.length == 5) {
+                                                if (zipCode.length == 5) {
                                                     scope.launch {
                                                         val result = getAddressByCP(zipCode)
-                                                        if(result == null)
-                                                            Toast.makeText(context, "No se encontró información para el código postal ingresado", Toast.LENGTH_SHORT).show()
+                                                        if (result == null)
+                                                            Toast.makeText(
+                                                                context,
+                                                                "No se encontró información para el código postal ingresado",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
                                                         else {
                                                             state = result.estado
                                                             city = result.municipio
-                                                            neighborhood = result.asentamientos.firstOrNull() ?: ""
+                                                            neighborhood =
+                                                                result.asentamientos.firstOrNull()
+                                                                    ?: ""
                                                         }
                                                     }
                                                 } else
-                                                    Toast.makeText(context, "Por favor ingresa un código postal válido", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Por favor ingresa un código postal válido",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
                                             },
                                             modifier = Modifier.size(66.dp),
                                             shape = RoundedCornerShape(12.dp),
                                             colors = IconButtonDefaults.iconButtonColors(
-                                                containerColor = Tekhelet,
+                                                containerColor = PompAndPower,
                                                 contentColor = White
                                             ),
                                             content = {
@@ -635,7 +708,7 @@ fun AddDoctorScreen(
                                         enter = fadeIn() + expandVertically(),
                                         exit = fadeOut() + shrinkVertically()
                                     ) {
-                                        Column (
+                                        Column(
                                             modifier = Modifier
                                                 .padding(top = 6.dp)
                                                 .fillMaxWidth(),
@@ -651,15 +724,27 @@ fun AddDoctorScreen(
                                                 color = Color.LightGray,
                                                 fontSize = 12.sp
                                             )
-                                            Row (
+                                            Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
-                                                city = blockedInput("Ciudad", city, Modifier.weight(1f))
-                                                state = blockedInput("Estado", state, Modifier.weight(1f))
+                                                city = blockedInput(
+                                                    "Ciudad",
+                                                    city,
+                                                    Modifier.weight(1f)
+                                                )
+                                                state = blockedInput(
+                                                    "Estado",
+                                                    state,
+                                                    Modifier.weight(1f)
+                                                )
                                             }
-                                            neighborhood = blockedInput("Colonia", neighborhood, Modifier.fillMaxWidth())
+                                            neighborhood = blockedInput(
+                                                "Colonia",
+                                                neighborhood,
+                                                Modifier.fillMaxWidth()
+                                            )
                                         }
                                     }
 
@@ -702,14 +787,17 @@ fun AddDoctorScreen(
                                         )
 
                                         HorizontalDivider(
-                                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 40.dp),
+                                            modifier = Modifier.padding(
+                                                vertical = 8.dp,
+                                                horizontal = 40.dp
+                                            ),
                                             thickness = 2.dp,
                                             color = AntiFlashWhite
                                         )
 
                                         OutlinedButton(
                                             onClick = {
-                                                addressViewModel.deleteAddress(address.id)
+                                                addressViewModel.deleteAddress(address.id_address)
                                                 scope.launch {
                                                     val result = snackbarHostState.showSnackbar(
                                                         message = "Dirección eliminada",
@@ -718,7 +806,24 @@ fun AddDoctorScreen(
                                                     )
 
                                                     if (result == SnackbarResult.ActionPerformed) {
-                                                        addressViewModel.addAddress(address.copy(isSelected = false))
+                                                        addressViewModel.createAddress(
+                                                            addressData = AddressCreate(
+                                                                name = address.name,
+                                                                street = address.street,
+                                                                neighborhood = address.neighborhood,
+                                                                city = address.city,
+                                                                state = address.state,
+                                                                zip_code = address.zip_code,
+                                                                phone_number = address.phone_number,
+                                                                is_selected = false
+                                                            )
+                                                        ) {
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Dirección restaurada",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
                                                         addressViewModel.unselectAllAddresses()
                                                     }
                                                 }
@@ -763,6 +868,13 @@ fun AddDoctorScreen(
                             modifier = Modifier.padding(horizontal = 25.dp, vertical = 30.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            val colors = listOf(
+                                listOf(CardGray, RaisinBlack, Color.Gray),
+                                listOf(CardPurple, White, AntiFlashWhite),
+                                listOf(Tekhelet, White, AntiFlashWhite),
+                                listOf(CardDark, White, AntiFlashWhite),
+                                listOf(RaisinBlack, White, AntiFlashWhite)
+                            ).random()
                             Text(
                                 text = "Resumen y confirmación",
                                 color = RaisinBlack,
@@ -785,57 +897,25 @@ fun AddDoctorScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            DoctorCard(
+                            FlipCard(
                                 icon = genreTemp,
-                                doctorDetails = listOf("$name $lastName", speciality?.displayName, getAbout(speciality)),
+                                doctorDetails = listOf(
+                                    "$name $lastName",
+                                    speciality?.displayName,
+                                    speciality?.description
+                                ),
                                 clinicDetails = listOf(
                                     selectedAddress?.name,
                                     "${selected.code} $formatted",
                                     email,
-                                    "${selectedAddress?.street}, ${selectedAddress?.neighborhood}, ${selectedAddress?.zipCode} ${selectedAddress?.city}, ${selectedAddress?.state}"
+                                    "${selectedAddress?.street}, ${selectedAddress?.neighborhood}, ${selectedAddress?.zip_code} ${selectedAddress?.city}, ${selectedAddress?.state}"
                                 ),
-                                colors = listOf(Tekhelet, White, AntiFlashWhite),
+                                colors = listOf(Tekhelet, White, AntiFlashWhite)
                             )
                         }
                     }
                 }
             }
         }
-    }
-}
-
-fun getAbout(speciality: Speciality?): String {
-    return when (speciality) {
-        Speciality.CARDIOLOGIST ->
-            "Especialista en el diagnóstico y tratamiento de enfermedades del corazón."
-        Speciality.PEDIATRICIAN ->
-            "Encargado del cuidado integral de niños y adolescentes."
-        Speciality.DERMATOLOGIST ->
-            "Especialista en enfermedades de la piel, cabello y uñas."
-        Speciality.NEUROLOGIST ->
-            "Experto en trastornos del sistema nervioso, incluyendo cerebro y médula espinal."
-        Speciality.GYNECOLOGIST ->
-            "Especialista en salud femenina, embarazo y parto."
-        Speciality.ENDOCRINOLOGIST ->
-            "Encargado del diagnóstico y tratamiento de trastornos hormonales y metabólicos."
-        Speciality.ORTHOPEDIC_SURGEON ->
-            "Especialista en el tratamiento de lesiones y enfermedades del sistema musculoesquelético."
-        Speciality.ONCOLOGIST ->
-            "Experto en el diagnóstico and tratamiento del cáncer."
-        Speciality.PULMONOLOGIST ->
-            "Especialista en enfermedades del sistema respiratorio, incluyendo pulmones y vías respiratorias."
-        Speciality.RHEUMATOLOGIST ->
-            "Encargado del diagnóstico y tratamiento de enfermedades reumáticas, como artritis y lupus."
-        Speciality.NEPHROLOGIST ->
-            "Especialista en el cuidado de los riñones y el tratamiento de enfermedades renales."
-        Speciality.HEMATOLOGIST ->
-            "Experto en trastornos de la sangre, como anemia y leucemia."
-        Speciality.INFECTIOUS_DISEASE_SPECIALIST ->
-            "Especialista en el diagnóstico y tratamiento de enfermedades infecciosas, como VIH y tuberculosis."
-        Speciality.ALLERGIST ->
-            "Encargado del diagnóstico y tratamiento de alergias, como asma y rinitis alérgica."
-        Speciality.IMMUNOLOGIST ->
-            "Especialista en el sistema inmunológico y enfermedades relacionadas, como inmunodeficiencias y enfermedades autoinmunes."
-        else -> "Información no disponible para esta especialidad."
     }
 }
