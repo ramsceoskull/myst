@@ -4,9 +4,7 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,7 +28,7 @@ fun PhotoActionsSection(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
         ) {
             ActionChip(
                 text = "Cambiar foto",
@@ -38,8 +36,6 @@ fun PhotoActionsSection(
                 backgroundColor = PompAndPower,
                 contentColor = White
             )
-
-            Spacer(modifier = Modifier.width(12.dp))
 
             ActionChip(
                 text = "Eliminar foto",
