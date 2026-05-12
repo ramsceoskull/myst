@@ -63,14 +63,14 @@ fun ChatInput(
                 text = newText.split(" ")
                     .joinToString(" ") { word ->
                         word.replaceFirstChar {
-                            if(it.isLowerCase()) it.titlecase() else it.toString()
+                            if (it.isLowerCase()) it.titlecase() else it.toString()
                         }
                     }
             },
             placeholder = { Text("Escribe tu mensaje...") },
             modifier = Modifier.weight(1f),
             singleLine = false,
-            maxLines = 5,
+            maxLines = 4,
             colors = colors
         )
 
@@ -78,8 +78,9 @@ fun ChatInput(
 
         IconButton(
             onClick = {
-                if(text.isBlank()) {
-                    Toast.makeText(context, "No puedes enviar un mensaje vacío", Toast.LENGTH_SHORT).show()
+                if (text.isBlank()) {
+                    Toast.makeText(context, "No puedes enviar un mensaje vacío", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
                     onSend(text.trim())
                     text = ""
@@ -127,11 +128,11 @@ fun ChatInput(
         TextField(
             value = text,
             onValueChange = { newText ->
-                if(!newText.contains(" ") && newText.length <= 10)
+                if (!newText.contains(" ") && newText.length <= 10)
                     text = newText.split(" ")
                         .joinToString(" ") { word ->
                             word.replaceFirstChar {
-                                if(it.isLowerCase()) it.titlecase() else it.toString()
+                                if (it.isLowerCase()) it.titlecase() else it.toString()
                             }
                         }
             },
@@ -145,8 +146,9 @@ fun ChatInput(
 
         IconButton(
             onClick = {
-                if(text.isBlank()) {
-                    Toast.makeText(context, "No puedes enviar un mensaje vacío", Toast.LENGTH_SHORT).show()
+                if (text.isBlank()) {
+                    Toast.makeText(context, "No puedes enviar un mensaje vacío", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
                     onSend(text.trim())
                     text = ""
@@ -168,7 +170,7 @@ fun ChatInput(
 fun ChatInput(
     onSend: (String) -> Unit,
     modifier: Modifier = Modifier,
-    isNumeric : Boolean
+    isNumeric: Boolean
 ) {
     val colors = TextFieldDefaults.colors(
         unfocusedContainerColor = Color.Transparent,
@@ -200,7 +202,12 @@ fun ChatInput(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             placeholder = { Text("Digite la cantidad...") },
-            supportingText = { if(text.isBlank()) Text("Si no aplica, deje en blanco o escriba 0", color = SweetGrey) },
+            supportingText = {
+                if (text.isBlank()) Text(
+                    "Si no aplica, deje en blanco o escriba 0",
+                    color = SweetGrey
+                )
+            },
             modifier = Modifier.weight(1f),
             singleLine = true,
             colors = colors
@@ -210,12 +217,13 @@ fun ChatInput(
 
         IconButton(
             onClick = {
-                if(text.isBlank()) {
+                if (text.isBlank()) {
                     onSend("0")
                     text = ""
                     return@IconButton
-                } else if(text.toInt() > 20) {
-                    Toast.makeText(context, "El valor no puede ser mayor a 20", Toast.LENGTH_SHORT).show()
+                } else if (text.toInt() > 20) {
+                    Toast.makeText(context, "El valor no puede ser mayor a 20", Toast.LENGTH_SHORT)
+                        .show()
                     return@IconButton
                 }
                 onSend(text)
