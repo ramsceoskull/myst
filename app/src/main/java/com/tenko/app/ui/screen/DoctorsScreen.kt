@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Scaffold
@@ -17,13 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
+import com.tenko.app.R
 import com.tenko.app.data.view.DoctorViewModel
 import com.tenko.app.navigation.AppScreens
-import com.tenko.app.ui.components.AddContactButton
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.BottomNavigationBar
 import com.tenko.app.ui.components.DoctorCard
+import com.tenko.app.ui.components.FloatingActionButton
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.CardDark
@@ -35,7 +37,7 @@ import com.tenko.app.ui.theme.White
 
 @Composable
 fun DoctorsScreen(
-    navController: NavHostController,
+    navController: NavController,
     viewModel: DoctorViewModel = viewModel()
 ) {
     LaunchedEffect(Unit) {
@@ -52,13 +54,19 @@ fun DoctorsScreen(
                 onBackClick = { navController.popBackStack() },
             )
         },
-        floatingActionButton = { AddContactButton(onClick = { navController.navigate(AppScreens.AddDoctorScreen.route) }) },
+        floatingActionButton = {
+            FloatingActionButton(R.drawable.address_book_solid_full) {
+                navController.navigate(AppScreens.AddDoctorScreen.route)
+            }
+        },
         bottomBar = { BottomNavigationBar(navController) },
         containerColor = BackgroundColor
     ) { paddingValues ->
         LazyColumn(
             contentPadding = paddingValues,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 25.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             item { Spacer(modifier = Modifier.height(12.dp)) }
@@ -77,7 +85,10 @@ fun DoctorsScreen(
                     colors = colors,
                     onClick = {
                         selectedDoctorName = "${contact.name} ${contact.last_name}"
-                        viewModel.filterRemindersByContact(contact.id_contact)
+                        navController.navigate(AppScreens.DoctorDetailsScreen.createRoute(contact.id_contact))
+//                        navController.navigate("${AppScreens.DoctorDetailsScreen.route}/${contact.id_contact}")
+//                        DoctorDetailsScreen(navController = navController, doctor = contact)
+//                        viewModel.filterRemindersByContact(contact.id_contact)
                     }
                 )
             }
