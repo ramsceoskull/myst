@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenko.app.R
 import com.tenko.app.data.serializable.ContactResponse
-import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
 
 @Composable
@@ -64,14 +63,15 @@ fun DoctorCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp)
-            .padding(horizontal = 25.dp),
+            .height(110.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(8.dp),
         colors = CardDefaults.cardColors(containerColor = colors[0]),
         content = {
             Row(
-                modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 15.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 20.dp, end = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -102,7 +102,7 @@ fun DoctorCard(
                 Spacer(modifier = Modifier.width(15.dp))
 
                 contact.genre?.let {
-                    val avatar = when(it) {
+                    val avatar = when (it) {
                         0 -> R.drawable.doctor0
                         1 -> R.drawable.doctor1
                         2 -> R.drawable.doctor2
@@ -113,7 +113,9 @@ fun DoctorCard(
                     Image(
                         painter = painterResource(id = avatar),
                         contentDescription = "Doctor Avatar",
-                        modifier = Modifier.fillMaxHeight().padding(top = 12.dp),
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(top = 12.dp),
                         contentScale = ContentScale.FillHeight
                     )
                 }
@@ -123,7 +125,7 @@ fun DoctorCard(
 }
 
 @Composable
-fun DoctorCard(
+fun FlipCard(
     icon: Int?,
     doctorDetails: List<String?>,
     clinicDetails: List<String?>,
@@ -177,21 +179,28 @@ fun DoctorCard(
 //                    PROFUNDIDAD 3D
                     cameraDistance = 28f * density
                 }
-                .clickable { flipped = !flipped }
-            ,
+                .clickable { flipped = !flipped },
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(elevation),
             colors = CardDefaults.cardColors(containerColor = colors[0])
         ) {
-            Box(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+            ) {
                 // FRONTAL
                 if (rotation <= 90f) {
                     Row(
-                        modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 15.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 20.dp, end = 15.dp),
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxHeight().weight(1f),
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(1f),
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
@@ -297,14 +306,15 @@ fun DoctorCard(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        HorizontalDivider(color = Tekhelet.copy(0.6f), thickness = 2.dp)
+        HorizontalDivider(color = colors[0].copy(0.6f), thickness = 2.dp)
 
         Spacer(modifier = Modifier.height(24.dp))
 
         AnimatedContent(
             targetState = flipped,
             transitionSpec = {
-                fadeIn(animationSpec = tween(900)
+                fadeIn(
+                    animationSpec = tween(900)
                 ) + slideInVertically(
                     initialOffsetY = { it / 2 }
                 ) togetherWith fadeOut(
@@ -316,7 +326,7 @@ fun DoctorCard(
             label = "bottom_text_animation"
         ) { isFlipped ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if(!isFlipped) {
+                if (!isFlipped) {
                     Text(
                         text = "Contacto disponible en...",
                         fontSize = 14.sp,
