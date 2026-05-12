@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,9 +15,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +33,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.tenko.app.data.serializable.DailyLogCreate
+import com.tenko.app.data.serializable.DailyLogResponse
 import com.tenko.app.data.view.CycleViewModel
 import com.tenko.app.ui.components.AddCalendarEvent
 import com.tenko.app.ui.components.AppTopBar
@@ -47,10 +49,13 @@ import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen(navController: NavHostController, viewModel: CycleViewModel = viewModel()) {
+fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = viewModel()) {
     val currentMonth = remember { YearMonth.now() }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showSheet by remember { mutableStateOf(false) }
+
+    // Obtenemos el log de la fecha seleccionada para pasarlo al BottomSheet
+    val selectedDateLog = viewModel.dailyLogs.find { it.date == selectedDate }
 
     // Cargar datos al iniciar
     LaunchedEffect(Unit) { viewModel.fetchData() }
@@ -63,14 +68,8 @@ fun CalendarScreen(navController: NavHostController, viewModel: CycleViewModel =
     )
 
     Scaffold(
-        topBar = { AppTopBar(
-            title = "Calendario",
-            onBackClick = { navController.popBackStack() }
-        ) },
-        floatingActionButton = {
-            // Botón para abrir el registro de síntomas
-            AddCalendarEvent({ showSheet = true })
-        },
+        topBar = { AppTopBar(title = "Calendario", onBackClick = { navController.popBackStack() }) },
+        floatingActionButton = { AddCalendarEvent({ showSheet = true }) },
         bottomBar = { BottomNavigationBar(navController) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
@@ -80,21 +79,31 @@ fun CalendarScreen(navController: NavHostController, viewModel: CycleViewModel =
                 state = state,
                 dayContent = { day ->
                     val date = day.date
+                    val existingLog = viewModel.dailyLogs.find { it.date == date }
 
-                    // 1. Determinar el color del día
+                    // LÓGICA DE COLORES MEJORADA
                     val dayColor = when {
-                        // Si el día está dentro de un ciclo registrado (Pasado)
+                        // 1. Sangrado Real (Flujo > 0) -> Rosa Fuerte
+                        existingLog?.menstrual_flow != null && existingLog.menstrual_flow > 0 -> Color(0xFFFF6FAE)
+
+                        // 2. Ovulación Estimada (Aprox. día 14 de un ciclo de 28) -> Azul
+                        viewModel.cycles.any { cycle ->
+                            val ovulationDate = cycle.start_date?.plusDays(14)
+                            date == ovulationDate
+                        } -> Color(0xFF81D4FA)
+
+                        // 3. Días del ciclo actual (Sin sangrado reportado aún) -> Rosa Tenue
                         viewModel.cycles.any { cycle ->
                             val end = cycle.end_date ?: LocalDate.now()
                             !date.isBefore(cycle.start_date) && !date.isAfter(end)
-                        } -> Color(0xFFFF6FAE) // Rosa/Púrpura
+                        } -> Color(0xFFFF6FAE).copy(alpha = 0.3f)
 
-                        // Si el día está en el rango de predicción (Futuro)
+                        // 4. Predicción Futura -> Rojo suave
                         viewModel.prediction?.let { pred ->
                             val start = LocalDate.parse(pred.predicted_cycle_range.start)
                             val end = LocalDate.parse(pred.predicted_cycle_range.end)
                             !date.isBefore(start) && !date.isAfter(end)
-                        } ?: false -> Color.Red // Rojo para predicción
+                        } == true -> Color.Red.copy(alpha = 0.2f)
 
                         else -> Color.Transparent
                     }
@@ -102,8 +111,8 @@ fun CalendarScreen(navController: NavHostController, viewModel: CycleViewModel =
                     DayCell(
                         day = date,
                         selected = date == selectedDate,
-                        hasEvent = viewModel.dailyLogs.any { it.date == date },
-                        statusColor = dayColor, // Pasamos el color calculado
+                        hasEvent = existingLog != null,
+                        statusColor = dayColor,
                         onClick = {
                             selectedDate = date
                             showSheet = true
@@ -113,12 +122,17 @@ fun CalendarScreen(navController: NavHostController, viewModel: CycleViewModel =
             )
         }
 
+        // UN SOLO SHEET con la data vinculada correctamente
         if (showSheet) {
             DailyLogFormSheet(
                 date = selectedDate,
+                existingLog = selectedDateLog,
                 onDismiss = { showSheet = false },
                 onSave = { logData ->
-                    viewModel.createDailyLog(logData) { showSheet = false }
+                    viewModel.createDailyLog(logData) {
+                        showSheet = false
+                        viewModel.fetchData() // Refrescar tras guardar
+                    }
                 }
             )
         }
@@ -130,7 +144,7 @@ fun DayCell(
     day: LocalDate,
     selected: Boolean,
     hasEvent: Boolean,
-    statusColor: Color = Color.Transparent, // Nueva propiedad
+    statusColor: Color,
     onClick: () -> Unit
 ) {
     Column(
@@ -143,53 +157,44 @@ fun DayCell(
             modifier = Modifier
                 .size(40.dp)
                 .background(
-                    when {
-                        selected -> Color(0xFF7B61FF) // Color de selección (Morado)
-                        statusColor != Color.Transparent -> statusColor.copy(alpha = 0.2f) // Fondo suave para el rango
-                        else -> Color.Transparent
-                    },
+                    if (selected) Color(0xFF7B61FF) else statusColor,
                     CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 day.dayOfMonth.toString(),
-                color = when {
-                    selected -> Color.White
-                    statusColor != Color.Transparent -> statusColor // Texto del color del estado (ej. Rojo)
-                    else -> Color.Black
-                },
+                color = if (selected) Color.White else Color.Black,
                 fontWeight = if (statusColor != Color.Transparent) FontWeight.Bold else FontWeight.Normal
             )
         }
 
-        // El puntito indicador de que hay un log diario (síntomas)
         if (hasEvent) {
             Box(
                 Modifier
                     .padding(top = 2.dp)
                     .size(6.dp)
-                    .background(
-                        Color(0xFFFF6FAE), // Color para logs/eventos
-                        CircleShape
-                    )
+                    .background(Color(0xFFFF6FAE), CircleShape)
             )
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DailyLogFormSheet(
     date: LocalDate,
+    existingLog: DailyLogResponse?, // Pasar el log si ya existe
     onDismiss: () -> Unit,
     onSave: (DailyLogCreate) -> Unit
 ) {
-    // Estados para los campos que mencionaste
-    var flow by remember { mutableStateOf<Int?>(null) } // 0-4 según tu FlowEnum
-    var notes by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
-    var selectedHobbies by remember { mutableStateOf("") }
+    var flow by remember { mutableStateOf(existingLog?.menstrual_flow) }
+    var mood by remember { mutableStateOf(existingLog?.mood) }
+    var weight by remember { mutableStateOf(existingLog?.weight?.toString() ?: "") }
+    var notes by remember { mutableStateOf(existingLog?.notes ?: "") }
+
+    // Mapeo de tus Enums de Python
+    val flowOptions = mapOf(0 to "Nulo", 1 to "Ligero", 2 to "Medio", 3 to "Abundante", 4 to "Goteo")
+    val moodOptions = mapOf(1 to "Triste", 2 to "Enojada", 3 to "Neutral", 4 to "Feliz", 5 to "Muy feliz")
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -197,24 +202,14 @@ fun DailyLogFormSheet(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Registro: ${date}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Registro: $date", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            // --- SECCIÓN: FLUJO MENSTRUAL (INT) ---
-            Text("Flujo Menstrual", fontWeight = FontWeight.SemiBold)
-            val flowOptions = listOf("Nulo", "Ligero", "Medio", "Abundante", "Goteo")
-            flowOptions.forEachIndexed { index, label ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { flow = index }
-                ) {
-                    RadioButton(selected = flow == index, onClick = { flow = index })
-                    Text(label)
-                }
-            }
+            CatalogChips("Flujo Menstrual", flowOptions, flow) { flow = it }
 
-            // --- SECCIÓN: PESO (FLOAT) ---
+            CatalogChips("Estado de Ánimo", moodOptions, mood) { mood = it }
+
             OutlinedTextField(
                 value = weight,
                 onValueChange = { weight = it },
@@ -222,45 +217,80 @@ fun DailyLogFormSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // --- SECCIÓN: HOBBIES (STRING) ---
-            // Aquí puedes usar un TextField o chips que concatenen el string
-            Text("Hobbies y Actividades", fontWeight = FontWeight.SemiBold)
-            OutlinedTextField(
-                value = selectedHobbies,
-                onValueChange = { selectedHobbies = it },
-                placeholder = { Text("Ej: Leer, Bailar...") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // --- SECCIÓN: NOTAS ---
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notas adicionales") },
+                label = { Text("Notas") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
 
             Button(
                 onClick = {
-                    onSave(
-                        DailyLogCreate(
-                            date = date,
-                            menstrual_flow = flow,
-                            weight = weight.toFloatOrNull(),
-                            hobbies_activities = selectedHobbies.ifBlank { null },
-                            notes = notes.ifBlank { null }
-                            // Agrega aquí el resto de campos de tu data class
-                        )
-                    )
+                    onSave(DailyLogCreate(
+                        date = date,
+                        menstrual_flow = flow,
+                        mood = mood,
+                        weight = weight.toFloatOrNull(),
+                        notes = notes.ifBlank { null }
+                    ))
                 },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar Registro")
+                Text(if (existingLog == null) "Guardar Registro" else "Actualizar Registro")
             }
         }
     }
 }
+@Composable
+fun CalendarHeader(state: CalendarState) {
+    val month = state.firstVisibleMonth.yearMonth
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            month.month.name,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            month.year.toString()
+        )
+
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CatalogChips(
+    title: String,
+    options: Map<Int, String>,
+    selectedId: Int?,
+    onSelected: (Int) -> Unit
+) {
+    Column {
+        Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
+        FlowRow( // Importa androidx.compose.layout.FlowRow
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            options.forEach { (id, label) ->
+                FilterChip(
+                    selected = selectedId == id,
+                    onClick = { onSelected(id) },
+                    label = { Text(label) }
+                )
+            }
+        }
+    }
+}
+
+
 
 
 //@OptIn(ExperimentalMaterial3Api::class)
@@ -432,72 +462,3 @@ fun CalendarScreen(navController: NavHostController) {
         }
     }
 }*/
-
-@Composable
-fun CalendarHeader(state: CalendarState) {
-    val month = state.firstVisibleMonth.yearMonth
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            month.month.name,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            month.year.toString()
-        )
-
-    }
-}
-
-@Composable
-fun DayCell(
-    day: LocalDate,
-    selected: Boolean,
-    hasEvent: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(4.dp)
-            .clickable { onClick() }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    when {
-                        selected -> Color(0xFF7B61FF)
-                        else -> Color.Transparent
-                    },
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                day.dayOfMonth.toString(),
-                color = if (selected) Color.White else Color.Black
-            )
-
-        }
-
-        if (hasEvent) {
-            Box(
-                Modifier
-                    .size(6.dp)
-                    .background(
-                        Color(0xFFFF6FAE),
-                        CircleShape
-                    )
-            )
-        }
-
-    }
-}
