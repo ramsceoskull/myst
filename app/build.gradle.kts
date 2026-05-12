@@ -16,8 +16,8 @@ android {
         applicationId = "com.tenko.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 9
-        versionName = "1.1.3"
+        versionCode = 10
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
