@@ -23,8 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +31,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,18 +45,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.tenko.app.R
-import com.tenko.app.data.model.MedicineEvent
 import com.tenko.app.data.notifications.scheduleMedicationAlarm
 import com.tenko.app.data.view.MedicineViewModel
 import com.tenko.app.ui.components.AppTopBar
+import com.tenko.app.ui.components.BottomBar
 import com.tenko.app.ui.components.DatePickerField
 import com.tenko.app.ui.components.DropdownField
-import com.tenko.app.ui.components.FoodOption
+import com.tenko.app.ui.components.SquaredOptionSelector
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.PompAndPower
@@ -69,9 +70,8 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) {
-    val state = viewModel.uiState.collectAsState()
-    val context = LocalContext.current
+fun AddMedicationScreen(navController: NavController, viewModel: MedicineViewModel = viewModel()) {
+    /*val context = LocalContext.current
 
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -89,7 +89,11 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
     }
 
     var showSuccess by remember { mutableStateOf(false) }
-
+    LaunchedEffect(viewModel.isSaved) {
+        if (viewModel.isSaved) {
+            showSuccess = true
+        }
+    }*/
     val colors = OutlinedTextFieldDefaults.colors(
         focusedContainerColor = White,
         unfocusedContainerColor = AntiFlashWhite,
@@ -101,38 +105,70 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
         disabledContainerColor = AntiFlashWhite,
         disabledBorderColor = Color.Transparent
     )
-    LaunchedEffect(viewModel.isSaved) {
-        if (viewModel.isSaved) {
-            showSuccess = true
-        }
-    }
+    val state = viewModel.uiState.collectAsState().value
+    var name by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Registrar medicamento",
-                onBackClick = onClose
+                title = "Agregar recordatorio",
+                onBackClick = { navController.popBackStack() }
             )
         },
         bottomBar = {
-            Spacer(modifier = Modifier.height(8.dp))
+            BottomBar(
+                text = "Guardar recordatorio",
+                onClick = { }
+            )
         },
         containerColor = BackgroundColor
-    ) { padding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
+                .padding(paddingValues)
+                .padding(horizontal = 25.dp, vertical = 30.dp)
                 .verticalScroll(rememberScrollState())
-                .padding(padding).padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            Text(
+                text = "Configura tu recordatorio",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Agrega los detalles de tu medicación para recibir recordatorios personalizados.",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Nombre del medicamento",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+            OutlinedTextField(
+                value = state.title,
+                onValueChange = {
+                    name = it
+                    viewModel.onTitleChange(it)
+                },
+                placeholder = { Text("Nombre del medicamento") },
+                colors = colors,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
             // Nombre
-            Text("Nombre del medicamento", fontSize = 14.sp, color = Color.Gray)
+            /*Text("Nombre del medicamento", fontSize = 14.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(6.dp))
             OutlinedTextField(
-                value = state.value.name,
-                onValueChange = { viewModel.onNameChange(it) },
+                value = state.value.title,
+                onValueChange = { viewModel.onTitleChange(it) },
                 placeholder = { Text("Buscar medicamento") },
-                isError = state.value.nameError != null,
-                supportingText = { state.value.nameError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                isError = viewModel.errorMessage != null,
+                supportingText = { viewModel.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 trailingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.magnifying_glass_solid_full),
@@ -156,9 +192,9 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
             )
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                val plural = state.value.dosage > "1"
+                val plural = state.value.dosage!! > "1"
                 OutlinedTextField(
-                    value = state.value.dosage,
+                    value = state.value.dosage!!,
                     onValueChange = { newValue ->
                         if(newValue.all { it.isDigit() }) {
                             viewModel.onDosageChange(newValue)
@@ -170,12 +206,12 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
-                DropdownField(
+                *//*DropdownField(
                     options = if(plural) listOf("Píldoras", "Inyecciones", "Mg", "Ml") else listOf("Píldora", "Inyección", "Mg", "Ml"),
                     selected = state.value.unit.ifEmpty { "Tipo" },
                     onSelected = { viewModel.onUnitChange(it) },
                     modifier = Modifier.weight(1f)
-                )
+                )*//*
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -195,7 +231,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            daysDifference?.let { days ->
+            *//*daysDifference?.let { days ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -213,7 +249,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
                     )
                     viewModel.onDurationChange(days.toString())
                 }
-            }
+            }*//*
 
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -264,7 +300,9 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
                         )
                         timePicker.show()
                     },
-                    modifier = Modifier.size(52.dp).background(color = PompAndPower, shape = RoundedCornerShape(12.dp)),
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(color = PompAndPower, shape = RoundedCornerShape(12.dp)),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
@@ -293,18 +331,12 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
             Text("Alimentación", fontSize = 14.sp, color = Color.Gray)
             Text("¿Cuándo necesitas tomar el medicamento?", fontSize = 12.sp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FoodOption(
-                    text = "Antes de comer",
-                    selected = !state.value.afterMeal,
-                    onClick = { viewModel.toggleFoodOption() },
-                )
-                FoodOption(
-                    text = "Después de comer",
-                    selected = state.value.afterMeal,
-                    onClick = { viewModel.toggleFoodOption() },
-                )
-            }
+            SquaredOptionSelector(
+                options = listOf("Antes", "Después"),
+                selectedOption = if (state.value.after_meal) "Después" else "Antes",
+                onOptionSelected = { viewModel.toggleAfterMeal() },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -342,17 +374,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
 
                 OutlinedButton(
                     onClick = {
-                        viewModel.onEvent(MedicineEvent.Save)
-                        /*if (name.isNotEmpty()) {
-                            viewModel.addMedicine(
-                                Medicine(
-//                                    startDate = startDate!!,
-//                                    endDate = endDate!!,
-                                    time = reminderTime,
-                                    timeFormat = timeFormat
-                                )
-                            )
-                        }*/
+//                        viewModel.validateAndSave()
                         scheduleMedicationAlarm(context, startDate, endDate, hour, minute)
                         Toast.makeText(context, "Recordatorio programado", Toast.LENGTH_SHORT).show()
                     },
@@ -364,7 +386,7 @@ fun AddMedicationScreen(viewModel: MedicineViewModel, onClose: () -> Unit = {}) 
                     modifier = Modifier.weight(1f),
                     content = { Text(text = "Guardar") }
                 )
-            }
+            }*/
         }
     }
 }
