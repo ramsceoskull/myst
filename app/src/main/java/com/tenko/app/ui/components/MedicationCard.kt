@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,46 +26,52 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenko.app.R
-import com.tenko.app.data.model.Medicine
 import com.tenko.app.data.model.MedicineStatus
+import com.tenko.app.data.serializable.ReminderResponse
 import com.tenko.app.ui.theme.MedCardBg
 import com.tenko.app.ui.theme.MedPending
 import com.tenko.app.ui.theme.MedPrimary
 import com.tenko.app.ui.theme.MedSkipped
 import com.tenko.app.ui.theme.MedTaken
+import com.tenko.app.ui.theme.RaisinBlack
 import com.tenko.app.ui.theme.White
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MedicationCard(
-    medicine: Medicine,
+    medicine: ReminderResponse,
     onTaken: () -> Unit,
     onSkipped: () -> Unit,
-    onEdit: (Medicine) -> Unit,
-    onInfo: (Medicine) -> Unit,
-    onDelete: (Medicine) -> Unit
+    onDelete: () -> Unit
 ) {
     val statusColor = when (medicine.status) {
-        MedicineStatus.ALL -> MedPrimary
-        MedicineStatus.TAKEN -> MedTaken
-        MedicineStatus.SKIPPED -> MedSkipped
-        MedicineStatus.PENDING -> MedPending
+        MedicineStatus.TAKEN.ordinal -> MedTaken
+        MedicineStatus.SKIPPED.ordinal -> MedSkipped
+        MedicineStatus.PENDING.ordinal -> MedPending
+        else -> {
+            MedPrimary
+        }
     }
 
     Card(
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(3.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MedCardBg
+            containerColor = MedCardBg,
+            contentColor = Color.Gray
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column( modifier = Modifier.padding(16.dp) ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
 //            HEADER
-            Row( verticalAlignment = Alignment.CenterVertically ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(52.dp)
@@ -74,48 +79,48 @@ fun MedicationCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        tint = null,
-                        contentDescription = "Medicine Icon",
                         painter = painterResource(R.drawable.red_and_white_pill),
-                        modifier = Modifier.size(26.dp)
+                        contentDescription = "Medicine Icon",
+                        modifier = Modifier.size(26.dp),
+                        tint = Color.Unspecified
                     )
                 }
 
                 Spacer(Modifier.width(12.dp))
 
-                Column( modifier = Modifier.weight(1f) ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = medicine.name,
+                        text = medicine.title,
+                        color = RaisinBlack,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1
                     )
 
                     Text(
-                        text = medicine.dosage + " " + medicine.unit,
+                        text = medicine.dosage ?: "Dosis no especificada",
                         color = Color.Gray,
-                        fontSize = 14.sp
+                        fontSize = 15.sp
                     )
                 }
 
-                MedicationOptionsMenu(medicine, onInfo, onEdit, onDelete)
+                MedicationOptionsMenu(medicine, onDelete)
             }
 
-            Spacer(Modifier.height(12.dp))
-
 //            INFO
-            Row( verticalAlignment = Alignment.CenterVertically ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Icon(
                     painter = painterResource(R.drawable.clock_regular_full),
                     contentDescription = "Time Icon",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp),
                 )
-
-                Spacer(Modifier.width(4.dp))
-
                 Text(
-                    text = medicine.time + " " + medicine.timeFormat,
-                    color = Color.Gray,
+                    text = medicine.day_time?.format(DateTimeFormatter.ofPattern("HH:mm"))
+                        ?: "Hora no especificada",
                     fontSize = 13.sp
                 )
 
@@ -124,35 +129,25 @@ fun MedicationCard(
                 Icon(
                     painter = painterResource(R.drawable.utensils_solid_full),
                     contentDescription = "Meal Icon",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
-
-                Spacer(Modifier.width(4.dp))
-
                 Text(
-                    text = if (medicine.afterMeal) "Después de comer" else "Antes de comer",
-                    color = Color.Gray,
+                    text = if (medicine.after_meal == true) "Después de comer" else "Antes de comer",
                     fontSize = 13.sp
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-
 //            BUTTONS
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if(medicine.status == MedicineStatus.PENDING) {
+                if (medicine.status == MedicineStatus.PENDING.ordinal) {
                     OutlinedButton(
                         onClick = onSkipped,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(50),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = Color.LightGray
-                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(width = 1.dp, color = Color.LightGray),
                         content = {
                             Text(text = "Saltar")
                         }
@@ -162,22 +157,22 @@ fun MedicationCard(
 
                 Button(
                     onClick = onTaken,
-                    enabled = medicine.status == MedicineStatus.PENDING,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(50),
+                    enabled = medicine.status == MedicineStatus.PENDING.ordinal,
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = statusColor,
-                        contentColor = Color.Black,
+                        contentColor = RaisinBlack,
                         disabledContainerColor = statusColor,
-                        disabledContentColor = Color.Black,
+                        disabledContentColor = RaisinBlack,
                     ),
                     content = {
                         Text(
                             text = when (medicine.status) {
-                                MedicineStatus.ALL -> "Estado"
-                                MedicineStatus.TAKEN -> "Tomada"
-                                MedicineStatus.SKIPPED -> "Saltada"
-                                MedicineStatus.PENDING -> "Tomar"
+                                MedicineStatus.TAKEN.ordinal -> "Tomada"
+                                MedicineStatus.SKIPPED.ordinal -> "Saltada"
+                                MedicineStatus.PENDING.ordinal -> "Tomar"
+                                else -> "Estado"
                             }
                         )
                     }
@@ -185,26 +180,4 @@ fun MedicationCard(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewMed() {
-    MedicationCard(
-        medicine = Medicine(
-            id = 0,
-            name = "Amoxicillin",
-            dosage = "20",
-            unit = "mg",
-            time = "8:30",
-            timeFormat = "am",
-            afterMeal = true,
-            status = MedicineStatus.PENDING,
-        ),
-        onTaken = { },
-        onSkipped = { },
-        onInfo = { },
-        onEdit = { },
-        onDelete = { }
-    )
 }
