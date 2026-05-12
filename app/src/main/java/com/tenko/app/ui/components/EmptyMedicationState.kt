@@ -30,16 +30,19 @@ fun EmptyMedicationState(filter: MedicineStatus) {
             "Agrega tu primer medicamento para comenzar",
             R.drawable.realistic_medicine
         )
+
         MedicineStatus.PENDING -> Triple(
             "Nada pendiente 🎉",
             "No tienes medicamentos por tomar",
             R.drawable.circle_check_regular_full
         )
+
         MedicineStatus.TAKEN -> Triple(
             "Aún no has tomado medicamentos",
             "Los medicamentos tomados aparecerán aquí",
             R.drawable.hand_holding_medical_solid_full
         )
+
         MedicineStatus.SKIPPED -> Triple(
             "Nada omitido 👍",
             "No has saltado ningún medicamento",
@@ -58,7 +61,7 @@ fun EmptyMedicationState(filter: MedicineStatus) {
             painter = painterResource(icon),
             contentDescription = null,
             modifier = Modifier.size(72.dp),
-            tint = if(icon != R.drawable.realistic_medicine) PompAndPower.copy(alpha = 0.6f) else Color.Unspecified
+            tint = if (icon != R.drawable.realistic_medicine) PompAndPower.copy(alpha = 0.6f) else Color.Unspecified
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -70,10 +73,11 @@ fun EmptyMedicationState(filter: MedicineStatus) {
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = description,
+            fontSize = 16.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )
