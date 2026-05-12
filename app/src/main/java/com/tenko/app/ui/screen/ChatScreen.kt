@@ -105,12 +105,15 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                         containerColor = White,
                     ) {
                         Box(modifier = Modifier.padding(12.dp)) {
-                            if(viewModel.isQuestionnaireMode && lastMessage?.questionRef != null) {
+                            if (viewModel.isQuestionnaireMode && lastMessage?.questionRef != null) {
                                 AnswerSelector(lastMessage.questionRef) { answer ->
                                     viewModel.sendMessage(answer)
                                 }
-                            } else if(viewModel.messages.collectAsState().value.size > 2) {
-                                ChatInput(onSend = { viewModel.sendMessage(it) }, modifier = Modifier.imePadding())
+                            } else if (viewModel.messages.collectAsState().value.size > 2) {
+                                ChatInput(
+                                    onSend = { viewModel.sendMessage(it) },
+                                    modifier = Modifier.imePadding()
+                                )
                             }
                         }
                     }
@@ -141,38 +144,54 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                 }
 
                 item {
-                    Box(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                        if(viewModel.messages.collectAsState().value.size == 2) {
+                    Box(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        if (viewModel.messages.collectAsState().value.size == 2) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 OutlinedButton(
-                                    onClick = { viewModel.sendMessage("Actualizar historial"); showBottomInput = true },
+                                    onClick = {
+                                        viewModel.sendMessage("Actualizar historial");
+                                        showBottomInput = true
+                                    },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Tekhelet,
                                         contentColor = White,
                                     ),
                                     shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                                    contentPadding = PaddingValues(
+                                        horizontal = 20.dp,
+                                        vertical = 12.dp
+                                    ),
                                     content = { Text("Actualizar historial") }
                                 )
 
                                 OutlinedButton(
-                                    onClick = { viewModel.sendMessage("Mi día"); showBottomInput = true },
+                                    onClick = {
+                                        viewModel.sendMessage("Mi día")
+                                        showBottomInput = true
+                                    },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Tekhelet,
                                         contentColor = White,
                                     ),
                                     shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                                    contentPadding = PaddingValues(
+                                        horizontal = 20.dp,
+                                        vertical = 12.dp
+                                    ),
                                     content = { Text("Mi día") }
                                 )
                             }
                         }
                     }
 
-                    if(isTyping)
+                    if (isTyping)
                         TypingIndicator()
                 }
 
