@@ -23,18 +23,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.app.data.model.Address
+import com.tenko.app.data.serializable.AddressResponse
 import com.tenko.app.ui.theme.RaisinBlack
 import com.tenko.app.ui.theme.Tekhelet
 
 @Composable
 fun AddressItem(
-    address: Address,
+    address: AddressResponse,
     onSelect: () -> Unit,
     onEdit: () -> Unit
 ) {
     val animatedColor by animateColorAsState(
-        if (address.isSelected) Color(0xFFEDE7F6) else Color.Transparent,
+        if (address.is_selected) Color(0xFFEDE7F6) else Color.Transparent,
         label = "addressSelectionAnimation"
     )
 
@@ -52,7 +52,7 @@ fun AddressItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             RadioButton(
-                selected = address.isSelected,
+                selected = address.is_selected,
                 onClick = onSelect
             )
 
@@ -61,10 +61,10 @@ fun AddressItem(
                     text = address.name,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (address.isSelected) Tekhelet else RaisinBlack
+                    color = if (address.is_selected) Tekhelet else RaisinBlack
                 )
                 Text(
-                    text = "${address.street}, ${address.zipCode} ${address.city}, ${address.state}",
+                    text = "${address.street}, ${address.zip_code} ${address.city}, ${address.state}",
                     fontSize = 12.sp,
                 )
             }
