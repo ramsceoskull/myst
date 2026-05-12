@@ -1,16 +1,23 @@
 package com.tenko.app.ui.screen
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +29,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,12 +41,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults.Icon
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,12 +57,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.tenko.app.data.model.AnswerType
+import com.tenko.app.data.model.ClinicalQuestion
 import com.tenko.app.data.serializable.UserUpdate
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.ChatViewModel
@@ -62,27 +78,50 @@ import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
 import com.tenko.app.data.serializable.ClinicalHistoryUpdate
+import com.tenko.app.ui.components.AnswerSelector
+import com.tenko.app.ui.components.nameInput
 import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.ui.theme.SweetGrey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClinicalHistoryScreen(
     navController: NavController,
+    authViewModel: AuthViewModel = viewModel(),
     viewModel: ChatViewModel = viewModel()
 ) {
-    // Observamos los datos del historial y el estado de carga
-    val history by viewModel.historyData.collectAsState()
-    val isTyping by viewModel.isTyping.collectAsState()
-
-    var isRefreshing by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
     // Cargar datos al iniciar
     LaunchedEffect(Unit) {
         viewModel.fetchMyHistory()
+    }
+
+    // Observamos los datos del historial y el estado de carga
+    val history by viewModel.historyData.collectAsState()
+
+    var isRefreshing by remember { mutableStateOf(false) }
+    var showNameInput by remember { mutableStateOf(false) }
+    var showLastNameInput by remember { mutableStateOf(false) }
+    var showSecondLastNameInput by remember { mutableStateOf(false) }
+    var showDateDialog by remember { mutableStateOf(false) }
+    var showBinaryDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    var newName by remember { mutableStateOf("") }
+    val initials by remember(newName) {
+        derivedStateOf {
+            newName
+                .split(" ")
+                .filter { it.isNotBlank() }
+                .map { it.first().uppercaseChar() }
+                .joinToString("")
+        }
     }
 
     Scaffold(
@@ -105,37 +144,404 @@ fun ClinicalHistoryScreen(
             },
             modifier = Modifier
                 .background(White)
-                .padding(top = paddingValues.calculateTopPadding())
+                .padding(paddingValues)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 25.dp)
+                    .padding(horizontal = 20.dp, vertical = 30.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // SECCIÓN: Identificación
+//                SECCIÓN: Identificación
                 SectionTitle("Identificación")
 
                 InfoRow(
-                    label = "Apellido Paterno",
-                    value = history?.last_name ?: "No registrado",
-                    onClick = { /* Lógica para abrir input de texto similar a UpdateProfile */ }
+                    label = "Nombre",
+                    value = authViewModel.currentUser?.name ?: "No registrado",
+                    onClick = { showNameInput = true }
                 )
+                AnimatedVisibility(
+                    visible = showNameInput,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        newName = nameInput(true, authViewModel.currentUser?.name ?: "").first
+
+                        Row {
+                            TextButton(onClick = { showNameInput = false }) {
+                                Text("Cancelar", color = Color.Gray)
+                            }
+                            TextButton(
+                                onClick = {
+                                    if (newName.isNotBlank()) {
+                                        scope.launch {
+                                            isRefreshing = true
+                                            authViewModel.updateUser(
+                                                updateData = UserUpdate(
+                                                    name = newName, initials =
+                                                        if (initials.length == 2) initials
+                                                        else newName.take(2).uppercase()
+                                                ),
+                                                context = context
+                                            )
+                                            authViewModel.getUser(navController)
+                                            isRefreshing = false
+                                        }
+                                        showNameInput = false
+                                    } else
+                                        Toast.makeText(
+                                            context,
+                                            "El nombre no puede estar vacío",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = White,
+                                    containerColor = Tekhelet
+                                ),
+                                content = { Text("Cambiar nombre") }
+                            )
+                        }
+                    }
+                }
+
+                InfoRow(
+                    label = "Apellido paterno",
+                    value = history?.last_name ?: "No registrado",
+                    onClick = { showLastNameInput = true }
+                )
+                AnimatedVisibility(
+                    visible = showLastNameInput,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        newName = nameInput(false, history?.last_name ?: "").first
+
+                        Row {
+                            TextButton(onClick = { showLastNameInput = false }) {
+                                Text("Cancelar", color = Color.Gray)
+                            }
+                            TextButton(
+                                onClick = {
+                                    if (newName.isNotBlank()) {
+                                        scope.launch {
+                                            isRefreshing = true
+                                            viewModel.updateSingleField(
+                                                "last_name",
+                                                newName
+                                            )
+                                            Toast.makeText(
+                                                context,
+                                                "Apellido actualizado",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            viewModel.fetchMyHistory()
+                                            isRefreshing = false
+                                        }
+                                        showLastNameInput = false
+                                    } else
+                                        Toast.makeText(
+                                            context,
+                                            "El apellido no puede estar vacío",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = White,
+                                    containerColor = Tekhelet
+                                ),
+                                content = { Text("Cambiar apellido") }
+                            )
+                        }
+                    }
+                }
+
+                InfoRow(
+                    label = "Apellido materno",
+                    value = history?.second_last_name ?: "No registrado",
+                    onClick = { showSecondLastNameInput = true }
+                )
+                AnimatedVisibility(
+                    visible = showSecondLastNameInput,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        newName = nameInput(false, history?.second_last_name ?: "").first
+
+                        Row {
+                            TextButton(onClick = { showSecondLastNameInput = false }) {
+                                Text("Cancelar", color = Color.Gray)
+                            }
+                            TextButton(
+                                onClick = {
+                                    if (newName.isNotBlank()) {
+                                        scope.launch {
+                                            isRefreshing = true
+                                            viewModel.updateSingleField(
+                                                "second_last_name",
+                                                newName
+                                            )
+                                            Toast.makeText(
+                                                context,
+                                                "Apellido actualizado",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            viewModel.fetchMyHistory()
+                                            isRefreshing = false
+                                        }
+                                        showSecondLastNameInput = false
+                                    } else
+                                        Toast.makeText(
+                                            context,
+                                            "El apellido no puede estar vacío",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = White,
+                                    containerColor = Tekhelet
+                                ),
+                                content = { Text("Cambiar apellido") }
+                            )
+                        }
+                    }
+                }
+
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                var birthDate by remember { mutableStateOf<LocalDate?>(null) }
+
+                val zoneId = ZoneId.systemDefault()
+                val today = LocalDate.now()
+                val state = rememberDatePickerState(
+                    selectableDates = object : SelectableDates {
+                        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                            val selectedDate = Instant
+                                .ofEpochMilli(utcTimeMillis)
+                                .atZone(zoneId)
+                                .toLocalDate()
+                            return selectedDate.isBefore(today)
+                        }
+
+                        override fun isSelectableYear(year: Int): Boolean {
+                            return year <= today.year
+                        }
+                    }
+                )
+
+                InfoRow(
+                    label = "Fecha de nacimiento",
+                    value = history?.birthdate.toString().let {
+                        "${history?.birthdate?.dayOfMonth.toString().padStart(2, '0')}-${
+                            history?.birthdate?.monthValue.toString().padStart(2, '0')
+                        }-${history?.birthdate?.year}"
+                    },
+                    onClick = { showDateDialog = true }
+                )
+                if (showDateDialog) {
+                    DatePickerDialog(
+                        onDismissRequest = { showDateDialog = false },
+                        dismissButton = {
+                            Button(
+                                onClick = { showDateDialog = false },
+                                content = { Text("Cancelar") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = Color.Gray
+                                )
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isRefreshing = viewModel.isLoading.value
+                                        birthDate = state.selectedDateMillis?.let { millis ->
+                                            LocalDate.ofEpochDay(millis / (24 * 60 * 60 * 1000))
+                                        }
+                                        viewModel.updateSingleField(
+                                            "birthdate",
+                                            birthDate?.format(formatter) ?: ""
+                                        )
+                                        Toast.makeText(
+                                            context,
+                                            "Fecha de nacimiento actualizada",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        delay(2000)
+                                        isRefreshing = viewModel.isLoading.value
+                                    }
+
+                                    viewModel.fetchMyHistory()
+                                    showDateDialog = false
+                                },
+                                content = { Text("Aceptar") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PompAndPower,
+                                    contentColor = White
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = DatePickerDefaults.colors(containerColor = White),
+                        content = {
+                            DatePicker(
+                                state = state,
+                                showModeToggle = false,
+                                colors = DatePickerDefaults.colors(
+                                    containerColor = White,
+                                    titleContentColor = SweetGrey,
+                                    headlineContentColor = PompAndPower,
+                                    weekdayContentColor = Color.DarkGray,
+                                    navigationContentColor = Color.DarkGray,
+                                    yearContentColor = Color.DarkGray,
+                                    currentYearContentColor = Tekhelet,
+                                    selectedYearContentColor = White,
+                                    disabledSelectedYearContentColor = Color.LightGray,
+                                    selectedYearContainerColor = PompAndPower,
+                                    dayContentColor = Color.DarkGray,
+                                    disabledDayContentColor = Color.LightGray,
+                                    selectedDayContentColor = White,
+                                    selectedDayContainerColor = PompAndPower,
+                                    todayContentColor = Tekhelet,
+                                    todayDateBorderColor = Tekhelet,
+                                    dividerColor = SweetGrey,
+                                )
+                            )
+                        }
+                    )
+                }
 
                 InfoRow(
                     label = "Sexo biológico",
-                    value = history?.sex_biology ?: "No registrado",
+                    value = when (history?.sex_biology) {
+                        "femenine" -> "Femenino"
+                        "masculine" -> "Masculino"
+                        else -> "No registrado"
+                    },
+                    onClick = { showBinaryDialog = true }
+                )
+                AnimatedVisibility(
+                    visible = showBinaryDialog,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        AnswerSelector(
+                            ClinicalQuestion(
+                                "",
+                                "",
+                                AnswerType.SingleChoice(
+                                    options = mapOf(
+                                        "femenine" to "Femenino",
+                                        "masculine" to "Masculino"
+                                    )
+                                )
+                            ), { answer ->
+                                viewModel.updateSingleField(
+                                    "sex_biology",
+                                    when (answer) {
+                                        "Femenino" -> "femenine"
+                                        "Masculino" -> "masculine"
+                                        else -> null
+                                    }
+                                )
+                                Toast.makeText(
+                                    context,
+                                    "Sexo biológico actualizado",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                showBinaryDialog = false
+                            }
+                        )
+                        TextButton(onClick = { showBinaryDialog = false }) {
+                            Text("Cancelar", color = Color.Gray)
+                        }
+                    }
+                }
+
+//                SECCIÓN: Identidad y Biología
+                SectionTitle("Información General")
+
+                InfoRow(
+                    label = "Sexo legal",
+                    value = when (history?.sex_legally) {
+                        "femenine" -> "Femenino"
+                        "masculine" -> "Masculino"
+                        else -> "No registrado"
+                    },
                     onClick = { /* Diálogo de selección */ }
                 )
 
-                // SECCIÓN: Salud Femenina
-                SectionTitle("Salud Femenina")
+                InfoRow(
+                    label = "¿Es activ@ sexualmente?",
+                    value = if (history?.sexually_active == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "sexually_active",
+                            !(history?.sexually_active ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "¿Ha tenido abortos?",
+                    value = when (history?.miscarriages_abortions) {
+                        null -> "No registrado"
+                        0 -> "No"
+                        else -> "Sí (${history?.miscarriages_abortions})"
+                    },
+                    onClick = { /* Diálogo para ingresar número */ }
+                )
+
+//                SECCIÓN: Condiciones Médicas
+                SectionTitle("Antecedentes clínicos")
+
+                InfoRow(
+                    label = "¿Ha sido diagnosticad@ con diabetes?",
+                    value = when (history?.diabetes_mellitus) {
+                        "none" -> "Ninguna"
+                        "type_1" -> "Tipo 1"
+                        "type_2" -> "Tipo 2"
+                        "gestational" -> "Gestacional"
+                        "prediabetes" -> "Prediabetes"
+                        else -> "No registrado"
+                    },
+                    onClick = { /* Diálogo de opciones */ }
+                )
+
+                InfoRow(
+                    label = "¿Tiene presión alta (hipertensión)?",
+                    value = if (history?.arterial_hypertension == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "arterial_hypertension",
+                            !(history?.arterial_hypertension ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "¿Ha tenido o tiene algún diagnóstico de depresión?",
+                    value = if (history?.depression == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "depression",
+                            !(history?.depression ?: false)
+                        )
+                    }
+                )
 
                 // Ejemplo de edición directa con la función dinámica que creamos
                 InfoRow(
-                    label = "¿Padeces SOP (PCOS)?",
+                    label = "¿Le han diagnosticado síndrome de ovario poliquístico (PCOS)?",
                     value = when (history?.pcos) {
                         true -> "Sí"
                         false -> "No"
@@ -149,32 +555,187 @@ fun ClinicalHistoryScreen(
                 )
 
                 InfoRow(
-                    label = "¿Vida sexual activa?",
-                    value = if (history?.sexually_active == true) "Sí" else "No",
+                    label = "¿Tiene endometriosis?",
+                    value = if (history?.endometriosis == true) "Sí" else "No",
                     onClick = {
                         viewModel.updateSingleField(
-                            "sexually_active",
-                            !(history?.sexually_active ?: false)
+                            "endometriosis",
+                            !(history?.endometriosis ?: false)
                         )
                     }
                 )
 
-                // SECCIÓN: Condiciones Médicas
-                SectionTitle("Condiciones Médicas")
-
                 InfoRow(
-                    label = "Diabetes Mellitus",
-                    value = history?.diabetes_mellitus ?: "Ninguna",
-                    onClick = { /* Diálogo de opciones */ }
+                    label = "¿Ha tenido alguna infección o enfermedad de transmisión sexual (ETS)?",
+                    value = if (history?.std == null) "No registrado" else "Sí",
+                    onClick = { /* Diálogo de selección múltiple */ }
                 )
 
                 InfoRow(
-                    label = "Hipertensión Arterial",
-                    value = if (history?.arterial_hypertension == true) "Sí" else "No",
+                    label = "¿Presenta alteraciones de memoria?",
+                    value = if (history?.memory_alterations == true) "Sí" else "No",
                     onClick = {
                         viewModel.updateSingleField(
-                            "arterial_hypertension",
-                            !(history?.arterial_hypertension ?: false)
+                            "memory_alterations",
+                            !(history?.memory_alterations ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "¿Tiene diagnóstico o riesgo de demencia?",
+                    value = if (history?.dementia == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "dementia",
+                            !(history?.dementia ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "¿Padece incontinencia urinaria?",
+                    value = if (history?.urinary_incontinence == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "urinary_incontinence",
+                            !(history?.urinary_incontinence ?: false)
+                        )
+                    }
+                )
+
+//                SECCIÓN: Hábitos
+                SectionTitle("Hábitos de consumo")
+
+                InfoRow(
+                    label = "Sustancias",
+                    value = when (history?.sustance_use) {
+                        null -> "No registrado"
+                        else -> "No"
+                    },
+                    onClick = { /* Diálogo de selección múltiple */ }
+                )
+
+//                SECCIÓN: Ciclo menstrual
+                SectionTitle("Información del ciclo menstrual")
+
+                InfoRow(
+                    label = "Promedio ciclo (días)",
+                    value = history?.average_menstrual_cycle?.toString() ?: "No registrado",
+                    onClick = { /* Diálogo para ingresar número */ }
+                )
+
+                InfoRow(
+                    label = "¿Tiene ciclos menstruales regulares?",
+                    value = history?.regularity ?: "No registrado",
+                    onClick = {
+                    }
+                )
+
+                InfoRow(
+                    label = "Ciclo actual",
+                    value = history?.last_period_date?.toString() ?: "No registrado",
+                    onClick = { /* Diálogo para ingresar número */ }
+                )
+
+//                SECCIÓN: Riesgos y Screenings
+                SectionTitle("Mis señales de alerta")
+
+                InfoRow(
+                    label = "Depresión (screening)",
+                    value = if (history?.depression_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "depression_screening",
+                            !(history?.depression_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Alteraciones de memoria (screening)",
+                    value = if (history?.memory_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "memory_screening",
+                            !(history?.memory_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Incontinencia urinaria (screening)",
+                    value = if (history?.urinary_incontinence_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "urinary_incontinence_screening",
+                            !(history?.urinary_incontinence_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Anemia (screening)",
+                    value = if (history?.anemia_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "anemia_screening",
+                            !(history?.anemia_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Obesidad (screening)",
+                    value = if (history?.obesity_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "obesity_screening",
+                            !(history?.obesity_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Osteoporosis (screening)",
+                    value = if (history?.osteoporosis_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "osteoporosis_screening",
+                            !(history?.osteoporosis_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Sindrome de Turner (Screening)",
+                    value = if (history?.turner_syndrome_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "turner_syndrome_screening",
+                            !(history?.turner_syndrome_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "Endometriosis (Screening)",
+                    value = if (history?.endometriosis_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "endometriosis_screening",
+                            !(history?.endometriosis_screening ?: false)
+                        )
+                    }
+                )
+
+                InfoRow(
+                    label = "SOP (PCOS) - Screening",
+                    value = if (history?.pcos_screening == true) "Sí" else "No",
+                    onClick = {
+                        viewModel.updateSingleField(
+                            "pcos_screening",
+                            !(history?.pcos_screening ?: false)
                         )
                     }
                 )
