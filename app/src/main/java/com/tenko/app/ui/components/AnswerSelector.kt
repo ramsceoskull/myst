@@ -44,7 +44,9 @@ import com.tenko.app.ui.theme.StarsLove
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -84,7 +86,18 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 type.options.forEach { (key, value) ->
-                    OutlinedButton(onClick = { onAnswer(value) }) { Text(value) }
+                    OutlinedButton(
+                        onClick = { onAnswer(value) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = PompAndPower,
+                            disabledContainerColor = AntiFlashWhite,
+                            disabledContentColor = Color.Gray
+                        ),
+                        border = BorderStroke(1.dp, PompAndPower),
+                        content = { Text(value) },
+                    )
                 }
             }
         }
@@ -103,15 +116,23 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
             var birthDate by remember { mutableStateOf<LocalDate?>(null) }
             var showDialog by remember { mutableStateOf(false) }
 
-            val state = rememberDatePickerState(selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return utcTimeMillis < System.currentTimeMillis()
-                }
+            val zoneId = ZoneId.systemDefault()
+            val today = LocalDate.now()
+            val state = rememberDatePickerState(
+                selectableDates = object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        val selectedDate = Instant
+                            .ofEpochMilli(utcTimeMillis)
+                            .atZone(zoneId)
+                            .toLocalDate()
+                        return selectedDate.isBefore(today)
+                    }
 
-                override fun isSelectableYear(year: Int): Boolean {
-                    return year <= LocalDate.now().year
+                    override fun isSelectableYear(year: Int): Boolean {
+                        return year <= today.year
+                    }
                 }
-            })
+            )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -127,9 +148,7 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                         disabledContainerColor = AntiFlashWhite,
                         disabledBorderColor = Color.Transparent
                     ),
-                    onClick = {
-                        showDialog = true /*showDatePicker(context) { date -> birthDate = date }*/
-                    }
+                    onClick = { showDialog = true }
                 )
 
                 birthDate?.let {
