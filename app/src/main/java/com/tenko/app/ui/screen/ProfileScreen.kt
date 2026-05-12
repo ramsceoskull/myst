@@ -135,10 +135,10 @@ fun ProfileScreen(
                 title = "Historial clínico",
                 onClick = { navController.navigate(AppScreens.ClinicalHistoryScreen.route) }
             )
-            ActionCard(
+            /*ActionCard(
                 icon = R.drawable.circle_question_solid_full,
                 title = "Ayuda"
-            )
+            )*/
             ActionCard(
                 icon = R.drawable.gear_solid_full,
                 title = "Editar Perfil",
