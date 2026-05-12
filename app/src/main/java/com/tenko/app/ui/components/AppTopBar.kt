@@ -2,14 +2,12 @@ package com.tenko.app.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,8 +21,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MediumTopAppBar
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,25 +31,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.wear.compose.material3.ConfirmationDialog
-import androidx.wear.compose.material3.TextButtonDefaults
 import com.tenko.app.R
 import com.tenko.app.data.model.Quote
 import com.tenko.app.data.view.AuthViewModel
@@ -66,7 +58,6 @@ import com.tenko.app.ui.theme.StarsLove
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
 val quotes = listOf(
@@ -112,8 +103,17 @@ fun AppTopBar(
                 )
             },
             navigationIcon = {
-                onBackClick?.let {
-                    IconButton(onClick = it) {
+                onBackClick?.let { callback ->
+                    var lastClickTime by remember { mutableLongStateOf(0L) }
+                    IconButton(
+                        onClick = {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime > 1000L) { // 1 second debounce
+                                lastClickTime = currentTime
+                                callback()
+                            }
+                        }
+                    ) {
                         Icon(
                             modifier = Modifier.size(28.dp),
                             painter = painterResource(R.drawable.chevron_left_solid_full),
@@ -124,7 +124,7 @@ fun AppTopBar(
                 }
             },
             actions = {
-                if(actions.second != 0) {
+                if (actions.second != 0) {
                     IconButton(onClick = { showDialog = true }) {
                         Icon(
                             modifier = Modifier.size(28.dp),
@@ -142,7 +142,7 @@ fun AppTopBar(
                 .padding(horizontal = 8.dp)
         )
 
-        if(showDialog) {
+        if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 confirmButton = {
@@ -229,15 +229,22 @@ fun AppTopBar(
                 )
             },
             navigationIcon = {
+                var lastClickTime by remember { mutableLongStateOf(0L) }
                 IconButton(
-                    onClick = { navController.navigate(AppScreens.ProfileScreen.route) },
+                    onClick = {
+                        val currentTime = System.currentTimeMillis()
+                        if (currentTime - lastClickTime > 1000L) {
+                            lastClickTime = currentTime
+                            navController.navigate(AppScreens.ProfileScreen.route)
+                        }
+                    },
                     content = { ProfilePicture(user?.picture?.toUri(), 40.dp, false) }
                 )
             },
             actions = {
                 actions?.let {
                     IconButton(onClick = actions) {
-                        if(hasUnread) {
+                        if (hasUnread) {
                             Icon(
                                 tint = null,
                                 contentDescription = "Bandeja de entrada",
@@ -255,76 +262,16 @@ fun AppTopBar(
                     }
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors( containerColor = White, scrolledContainerColor = White ),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = White,
+                scrolledContainerColor = White
+            ),
 
             scrollBehavior = scrollBehavior,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(White)
                 .padding(horizontal = 8.dp)
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppTopBar(
-    title: String,
-    scrollBehavior: TopAppBarScrollBehavior,
-    navController: NavController,
-    onNotificationsClick: () -> Unit,
-    actions: @Composable RowScope.() -> Unit = {}
-) {
-    Surface(
-        shadowElevation = 4.dp,
-        border = BorderStroke(1.dp, SweetGrey)
-    ) {
-        MediumTopAppBar(
-            title = {
-                if(scrollBehavior.state.collapsedFraction < 0.5f)
-                    WelcomeSection()
-                else {
-                    Text(
-                        text = title,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = StarsLove,
-                        color = Tekhelet,
-                        modifier = Modifier.padding(start = 8.dp, top = 8.dp)
-                    )
-                }
-            },
-
-            navigationIcon = {
-                IconButton(
-                    onClick = { navController.navigate(AppScreens.ProfileScreen.route) },
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .size(40.dp)
-                        .clip(CircleShape)
-                ) {
-                    Image(
-                        contentScale = ContentScale.Crop,
-                        contentDescription = "Foto de perfil",
-                        painter = painterResource(R.drawable.mujer4)
-                    )
-                }
-            },
-
-            actions = {
-                IconButton(onClick = onNotificationsClick, modifier = Modifier.padding(end = 8.dp)) {
-                    Icon(
-                        tint = null,
-                        contentDescription = "Bandeja de entrada",
-                        painter = painterResource(R.drawable.bell_new_notification),
-                        modifier = Modifier.size(42.dp)
-                    )
-                }
-            },
-
-            colors = TopAppBarDefaults.topAppBarColors( containerColor = White, scrolledContainerColor = White ),
-
-            scrollBehavior = scrollBehavior
         )
     }
 }
@@ -340,7 +287,7 @@ fun WelcomeSection() {
         }
     }
 
-    Column (
+    Column(
         modifier = Modifier
             .height(IntrinsicSize.Min)
             .padding(start = 4.dp, end = 22.dp, bottom = 8.dp)
