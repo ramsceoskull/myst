@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,10 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tenko.app.data.model.AnswerType
 import com.tenko.app.data.model.ClinicalQuestion
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.StarsLove
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
@@ -47,42 +51,52 @@ import java.time.format.DateTimeFormatter
 fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
     when (val type = question.type) {
         is AnswerType.Binary -> {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = { onAnswer("Sí") },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Tekhelet,
-                        contentColor = White,
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                    content = { Text("Sí") }
-                )
-                Button(
-                    onClick = { onAnswer("No") },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Tekhelet,
-                        contentColor = White,
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                    content = { Text("No") }
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                for (answer in listOf("Sí", "No")) {
+                    TextButton(
+                        onClick = { onAnswer(answer) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            containerColor = PompAndPower,
+                            contentColor = White
+                        ),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                        content = {
+                            Text(
+                                text = answer,
+                                fontFamily = StarsLove,
+                                fontSize = 20.sp,
+                                modifier = Modifier.offset(y = 4.dp)
+                            )
+                        }
+                    )
+                }
             }
         }
+
         is AnswerType.SingleChoice -> {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 type.options.forEach { (key, value) ->
                     OutlinedButton(onClick = { onAnswer(value) }) { Text(value) }
                 }
             }
         }
+
         is AnswerType.Text -> {
-            ChatInput(onSend = onAnswer, modifier = Modifier.imePadding())
+            ChatInput(onSend = onAnswer, modifier = Modifier.imePadding(), enableWhiteSpace = false)
         }
+
         is AnswerType.Numeric -> {
             ChatInput(onSend = onAnswer, modifier = Modifier.imePadding(), isNumeric = true)
         }
+
         is AnswerType.DatePicker -> {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -113,7 +127,9 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                         disabledContainerColor = AntiFlashWhite,
                         disabledBorderColor = Color.Transparent
                     ),
-                    onClick = { showDialog = true /*showDatePicker(context) { date -> birthDate = date }*/ }
+                    onClick = {
+                        showDialog = true /*showDatePicker(context) { date -> birthDate = date }*/
+                    }
                 )
 
                 birthDate?.let {
@@ -124,12 +140,21 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                             contentColor = White
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(55.dp),
-                        content = { Text("Confirmar") }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        content = {
+                            Text(
+                                text = "Confirmar",
+                                fontFamily = StarsLove,
+                                fontSize = 20.sp,
+                                modifier = Modifier.offset(y = 4.dp)
+                            )
+                        }
                     )
                 }
 
-                if(showDialog) {
+                if (showDialog) {
                     DatePickerDialog(
                         onDismissRequest = { showDialog = false },
                         dismissButton = {
@@ -175,11 +200,11 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                                     currentYearContentColor = Tekhelet,
                                     selectedYearContentColor = White,
                                     disabledSelectedYearContentColor = Color.LightGray,
-                                    selectedYearContainerColor = Tekhelet,
+                                    selectedYearContainerColor = PompAndPower,
                                     dayContentColor = Color.DarkGray,
                                     disabledDayContentColor = Color.LightGray,
                                     selectedDayContentColor = White,
-                                    selectedDayContainerColor = Tekhelet,
+                                    selectedDayContainerColor = PompAndPower,
                                     todayContentColor = Tekhelet,
                                     todayDateBorderColor = Tekhelet,
                                     dividerColor = SweetGrey,
@@ -190,9 +215,11 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                 }
             }
         }
+
         is AnswerType.MultiChoice -> {
             // Estado para recordar qué llaves (keys) están seleccionadas
             val selectedOptions = remember { mutableStateListOf<String>() }
+            val isNoneSelected = selectedOptions.contains("none")
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -202,19 +229,33 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                     type.options.forEach { (key, value) ->
                         val isSelected = selectedOptions.contains(key)
 
-                        Button(
+                        OutlinedButton(
                             onClick = {
-                                if (isSelected) selectedOptions.remove(key)
-                                else selectedOptions.add(key)
+                                if (key == "none") {
+                                    if (isSelected) selectedOptions.remove(key)
+                                    else {
+                                        selectedOptions.clear()
+                                        selectedOptions.add(key)
+                                    }
+                                } else {
+                                    if (isSelected) selectedOptions.remove(key)
+                                    else selectedOptions.add(key)
+                                }
                             },
+                            enabled = !isNoneSelected || key == "none",
                             modifier = Modifier.padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(12.dp),
                             // Cambiamos el color según la selección
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) Tekhelet else Color.Transparent,
-                                contentColor = if (isSelected) White else Tekhelet
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (isSelected) PompAndPower else Color.Transparent,
+                                contentColor = if (isSelected) White else PompAndPower,
+                                disabledContainerColor = AntiFlashWhite,
+                                disabledContentColor = Color.Gray
                             ),
-                            border = BorderStroke(1.dp, Tekhelet),
+                            border = BorderStroke(
+                                1.dp,
+                                if (!isNoneSelected || key == "none") PompAndPower else Color.Transparent
+                            ),
                             content = { Text(value) }
                         )
                     }
@@ -223,7 +264,7 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                 }
 
                 // Botón para confirmar la selección múltiple
-                if(selectedOptions.isNotEmpty()) {
+                if (selectedOptions.isNotEmpty()) {
                     Button(
                         onClick = {
                             // Enviamos las opciones como un string separado por comas o JSON
@@ -235,8 +276,17 @@ fun AnswerSelector(question: ClinicalQuestion, onAnswer: (String) -> Unit) {
                             contentColor = White
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(55.dp),
-                        content = { Text("Confirmar selección") }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        content = {
+                            Text(
+                                text = "Confirmar selección",
+                                fontFamily = StarsLove,
+                                fontSize = 20.sp,
+                                modifier = Modifier.offset(y = 4.dp)
+                            )
+                        }
                     )
                 }
             }
