@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,14 +17,19 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tenko.app.ui.theme.AntiFlashWhite
+import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.StarsLove
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
 
@@ -55,6 +61,56 @@ fun BottomBar(onSend: (String) -> Unit, isNumeric: Boolean = false) {
                     .imePadding()
                     .padding(16.dp),
                 isNumeric = isNumeric
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomBar(
+    text: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 12.dp
+        ),
+        shadowElevation = 8.dp
+    ) {
+        NavigationBar(
+            modifier = Modifier.shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(
+                    topStart = 12.dp,
+                    topEnd = 12.dp
+                ),
+                ambientColor = Color.Black,
+                spotColor = Color.Black,
+                clip = false
+            ),
+            containerColor = White,
+        ) {
+            TextButton(
+                onClick = { onClick() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(66.dp)
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = PompAndPower,
+                    contentColor = White
+                ),
+                content = {
+                    Text(
+                        text = text,
+                        fontSize = 25.sp,
+                        fontFamily = StarsLove,
+                        fontWeight = FontWeight.ExtraLight,
+                        modifier = Modifier.offset(y = 4.dp)
+                    )
+                }
             )
         }
     }
@@ -103,7 +159,11 @@ fun BottomBar(
                 )
                 Text("Paso ${currentStep + 1} de $totalSteps")
 
-                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
                     Button(
                         onClick = { onPreviousStep() },
                         colors = ButtonDefaults.buttonColors(
@@ -111,9 +171,11 @@ fun BottomBar(
                             contentColor = White
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 8.dp),
                         content = {
-                            Text(if(currentStep > 0) "Atrás" else "Regresar")
+                            Text(if (currentStep > 0) "Atrás" else "Regresar")
                         }
                     )
 
@@ -126,9 +188,11 @@ fun BottomBar(
                             contentColor = White
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 8.dp),
                         content = {
-                            Text(if(currentStep < totalSteps - 1) "Siguiente" else "Finalizar")
+                            Text(if (currentStep < totalSteps - 1) "Siguiente" else "Finalizar")
                         }
                     )
                 }
