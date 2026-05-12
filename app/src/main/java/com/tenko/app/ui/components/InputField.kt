@@ -69,21 +69,25 @@ fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin ap
     OutlinedTextField(
         value = name,
         onValueChange = { newText ->
-            if(!enableWhiteSpace) {
-                if(!newText.contains(" "))
-                    name = newText.split(" ")
-                        .joinToString(" ") { word ->
-                            word.replaceFirstChar {
-                                if(it.isLowerCase()) it.titlecase() else it.toString()
+            if(newText.all { it.isLetter() || it.isWhitespace() }) {
+                if(!enableWhiteSpace) {
+                    if(newText.length <= 10)
+                        if(!newText.contains(" "))
+                            name = newText.split(" ")
+                                .joinToString(" ") { word ->
+                                    word.replaceFirstChar {
+                                        if(it.isLowerCase()) it.titlecase() else it.toString()
+                                    }
+                                }
+                } else {
+                    if(newText.length <= 20)
+                        name = newText.split(" ")
+                            .joinToString(" ") { word ->
+                                word.replaceFirstChar {
+                                    if(it.isLowerCase()) it.titlecase() else it.toString()
+                                }
                             }
-                        }
-            } else {
-                name = newText.split(" ")
-                    .joinToString(" ") { word ->
-                        word.replaceFirstChar {
-                            if(it.isLowerCase()) it.titlecase() else it.toString()
-                        }
-                    }
+                }
             }
         },
         placeholder = { Text(text = label, fontSize = 14.sp) },
@@ -101,6 +105,9 @@ fun nameInput(enableWhiteSpace: Boolean = true, label: String = "Nombres (sin ap
                     contentDescription = "User icon"
                 )
         },
+        /*supportingText = {
+            Text("Máximo ${name.length} de ${if(enableWhiteSpace) 20 else 10} caracteres", fontSize = 12.sp, color = SweetGrey)
+        },*/
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedContainerColor = AntiFlashWhite,
             focusedBorderColor = PompAndPower,
