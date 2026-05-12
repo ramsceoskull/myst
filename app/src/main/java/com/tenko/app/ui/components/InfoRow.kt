@@ -27,51 +27,48 @@ fun InfoRow(
     value: String,
     onClick: (() -> Unit)? = null
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(12.dp)
             .clickable(enabled = onClick != null) {
                 onClick?.invoke()
-            }
+            },
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            color = Color.Gray,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                modifier = Modifier.weight(1f)
+                text = value,
+                color = RaisinBlack,
+                style = MaterialTheme.typography.bodyMedium
             )
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = RaisinBlack
+            if (onClick != null) {
+                Icon(
+                    painter = painterResource(R.drawable.chevron_right_solid_full),
+                    contentDescription = "Editar $label",
+                    modifier = Modifier
+                        .size(30.dp)
+                        .padding(start = 8.dp),
+                    tint = Color.Gray
                 )
-
-                if(onClick != null) {
-                    Icon(
-                        painter = painterResource(R.drawable.chevron_right_solid_full),
-                        contentDescription = "Editar $label",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(30.dp).padding(start = 8.dp)
-                    )
-                } else {
-                    Spacer(modifier = Modifier.size(30.dp))
-                }
+            } else {
+                Spacer(modifier = Modifier.size(30.dp))
             }
         }
-
-        HorizontalDivider(
-            color = Color(0xFFE0E0E0),
-            thickness = (0.7).dp
-        )
     }
+
+    HorizontalDivider(
+        color = Color(0xFFE0E0E0),
+        thickness = (0.7).dp
+    )
 }
 
 @Composable
@@ -85,16 +82,16 @@ fun DeleteAccountRow(label: String, onClick: () -> Unit) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
             color = Color.Gray,
-            modifier = Modifier.weight(1f)
+            style = MaterialTheme.typography.bodyMedium
         )
 
         Icon(
             painter = painterResource(R.drawable.trash_can_regular_full),
             contentDescription = "Eliminar cuenta",
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.error
         )
     }
 }
