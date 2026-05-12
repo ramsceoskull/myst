@@ -17,14 +17,19 @@ import com.tenko.app.data.serializable.ReminderResponse
 @Composable
 fun ReminderSmallItem(reminder: ReminderResponse) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFF9F9F9)
         )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(reminder.title ?: "Sin título", fontWeight = FontWeight.Bold)
-            Text("${reminder.end_date} a las ${reminder.end_time}", style = MaterialTheme.typography.labelSmall)
+            Text(reminder.title, fontWeight = FontWeight.Bold)
+            Text(
+                "${reminder.end_date} a las ${reminder.day_time}",
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }
