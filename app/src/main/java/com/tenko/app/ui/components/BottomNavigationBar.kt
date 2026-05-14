@@ -45,10 +45,9 @@ fun BottomNavigationBar(navController: NavController) {
                 ),
                 ambientColor = Color.Black,
                 spotColor = Color.Black,
-//                clip = false
+                clip = false
             ),
             containerColor = BackgroundColor,
-//            tonalElevation = 30.dp
         ) {
             val currentRoute =
                 navController.currentBackStackEntryAsState().value?.destination?.route
@@ -77,13 +76,15 @@ fun BottomNavigationBar(navController: NavController) {
                         indicatorColor = PompAndPower.copy(alpha = 0.4f)
                     ),
                     onClick = {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) {
+                        if (currentRoute != item.route) {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.startDestinationId) {
 //                                saveState = true
-                            }
+                                }
 
-                            launchSingleTop = true
-                            restoreState = true
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 )
