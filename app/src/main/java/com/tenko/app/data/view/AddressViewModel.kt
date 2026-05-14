@@ -50,6 +50,30 @@ class AddressViewModel : ViewModel() {
         }
     }
 
+    // Actualizar dirección (@router.patch("/me/{id_address}"))
+    fun updateAddress(idAddress: Int, updateData: AddressUpdate, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            isLoading = true
+            executeWithRetry {
+                val response =
+                    ApiClient.client.patch("https://api-myst.onrender.com/addresses/me/$idAddress") {
+                        contentType(ContentType.Application.Json)
+                        setBody(updateData)
+                    }
+
+                if (response.status.isSuccess()) {
+                    // Refrescamos la lista para ver los cambios reflejados (especialmente si cambió is_selected)
+                    fetchMyAddresses()
+                    onSuccess()
+                    true
+                } else {
+                    false
+                }
+            }
+            isLoading = false
+        }
+    }
+
     fun deleteAddress(idAddress: Int) {
         viewModelScope.launch {
             isLoading = true
