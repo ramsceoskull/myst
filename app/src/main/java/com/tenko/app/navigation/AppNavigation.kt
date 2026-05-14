@@ -14,16 +14,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tenko.app.data.api.TokenManager
-import com.tenko.app.data.view.AddressViewModel
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.DoctorViewModel
-import com.tenko.app.data.view.MedicineViewModel
+import com.tenko.app.data.view.MedicineSearchViewModel
 import com.tenko.app.data.view.NotificationViewModel
 import com.tenko.app.ui.components.NotificationsOverlay
 import com.tenko.app.ui.screen.AddDoctorScreen
 import com.tenko.app.ui.screen.AddMedicationScreen
 import com.tenko.app.ui.screen.AddMedicineScreen
-import com.tenko.app.ui.screen.AddMedicationScreen
 import com.tenko.app.ui.screen.AllNotificationsScreen
 import com.tenko.app.ui.screen.CalendarScreen
 import com.tenko.app.ui.screen.ChatScreen
@@ -31,6 +29,7 @@ import com.tenko.app.ui.screen.ClinicalHistoryScreen
 import com.tenko.app.ui.screen.DoctorDetailsScreen
 import com.tenko.app.ui.screen.DoctorsScreen
 import com.tenko.app.ui.screen.EmailSentScreen
+import com.tenko.app.ui.screen.LaboratoryStudiesScreen
 import com.tenko.app.ui.screen.LoginScreen
 import com.tenko.app.ui.screen.MainScreen
 import com.tenko.app.ui.screen.NotificationDetailScreen
@@ -47,6 +46,7 @@ fun AppNavigation(tokenManager: TokenManager) {
     val authViewModel: AuthViewModel = viewModel()
     val doctorViewModel: DoctorViewModel = viewModel()
     val notificationViewModel = viewModel<NotificationViewModel>()
+    val medicineSearchViewModel = viewModel<MedicineSearchViewModel>()
 
     val context = LocalContext.current
 
@@ -86,7 +86,15 @@ fun AppNavigation(tokenManager: TokenManager) {
                 )
             }
 //            composable(AppScreens.ClinicalHistoryScreen.route) { ClinicalHistoryScreen(navController, authViewModel) }
-            composable(AppScreens.ClinicalHistoryScreen.route) { ClinicalHistoryScreen(navController) }
+            composable(AppScreens.ClinicalHistoryScreen.route) {
+                ClinicalHistoryScreen(
+                    navController,
+                    authViewModel
+                )
+            }
+            composable(AppScreens.LaboratoryStudiesScreen.route) {
+                LaboratoryStudiesScreen(navController)
+            }
             composable(AppScreens.UpdateProfileScreen.route) {
                 UpdateProfileScreen(
                     navController,
@@ -97,7 +105,7 @@ fun AppNavigation(tokenManager: TokenManager) {
             composable(AppScreens.ChatScreen.route) { ChatScreen(navController) }
             composable(AppScreens.CalendarScreen.route) { CalendarScreen(navController) }
             composable(AppScreens.DoctorsScreen.route) { DoctorsScreen(navController) }
-            composable("add_test") { AddMedicineScreen() }
+            composable("add_test") { AddMedicineScreen(medicineSearchViewModel) }
             composable(AppScreens.AddMedicationScreen.route) { AddMedicationScreen(navController) }
             composable(AppScreens.MainScreen.route) {
                 MainScreen(
