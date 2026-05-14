@@ -13,6 +13,7 @@ import com.tenko.app.data.api.ApiClient
 import com.tenko.app.data.serializable.ContactCreate
 import com.tenko.app.data.serializable.ContactResponse
 import com.tenko.app.data.serializable.ContactUpdate
+import com.tenko.app.data.serializable.ReminderCreate
 import com.tenko.app.data.serializable.ReminderResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
@@ -86,7 +87,7 @@ class DoctorViewModel : ViewModel() {
         }
     }
 
-    fun updateContact(idContact: Int, updateData: ContactUpdate, onSuccess: () -> Unit) {
+    fun updateContact(idContact: Int, updateData: ContactUpdate, navController: NavController) {
         viewModelScope.launch {
             isLoading = true
             executeWithRetry {
@@ -99,9 +100,20 @@ class DoctorViewModel : ViewModel() {
 
                 if (response.status.isSuccess()) {
                     fetchContacts() // Refrescamos la lista para ver los cambios
-                    onSuccess()
+                    Toast.makeText(
+                        navController.context,
+                        "Doctor actualizado exitosamente",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     true
-                } else false
+                } else {
+                    Toast.makeText(
+                        navController.context,
+                        "Error al actualizar doctor: ${response.status}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    false
+                }
             }
             isLoading = false
         }
@@ -144,15 +156,78 @@ class DoctorViewModel : ViewModel() {
         }
     }
 
-    fun fetchContactReminders(id_contact: Int) {
+    fun fetchContactReminders(idContact: Int) {
         viewModelScope.launch {
             executeWithRetry {
                 val response =
-                    ApiClient.client.get("https://api-myst.onrender.com/reminders/contact/${id_contact}")
+                    ApiClient.client.get("https://api-myst.onrender.com/reminders/contact/${idContact}")
                 if (response.status == HttpStatusCode.OK) {
                     allReminders = response.body()
                     true
                 } else false
+            }
+        }
+    }
+
+    fun createContactReminder(
+        idContact: Int,
+        reminderData: ReminderCreate,
+        context: Context
+    ) {
+        viewModelScope.launch {
+            isLoading = true
+            executeWithRetry {
+                // Forzamos los valores necesarios para este contexto
+                val finalData = reminderData.copy(
+                    id_contact = idContact,
+                    type = false
+                )
+
+                val response = ApiClient.client.post("https://api-myst.onrender.com/reminders/") {
+                    contentType(ContentType.Application.Json)
+                    setBody(finalData)
+                }
+
+                if (response.status.isSuccess()) {
+                    Toast.makeText(context, "Recordatorio creado exitosamente", Toast.LENGTH_SHORT)
+                        .show()
+                    // Refrescamos los recordatorios del contacto para que la UI se actualice
+                    fetchContactReminders(idContact)
+                    true
+                } else {
+                    val errorMsg = when (response.status) {
+                        HttpStatusCode.BadRequest -> "Contacto inválido"
+                        else -> "Error: ${response.status.value}"
+                    }
+                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                    false
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    fun deleteContactReminder(idReminder: Int, idContact: Int, navController: NavController) {
+        viewModelScope.launch {
+            executeWithRetry {
+                val response =
+                    ApiClient.client.delete("https://api-myst.onrender.com/reminders/me/$idReminder")
+                if (response.status.isSuccess()) {
+                    fetchContactReminders(idContact)
+                    Toast.makeText(
+                        navController.context,
+                        "Recordatorio eliminado exitosamente",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    true
+                } else {
+                    Toast.makeText(
+                        navController.context,
+                        "Error al eliminar recordatorio: ${response.status}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    false
+                }
             }
         }
     }
