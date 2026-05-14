@@ -1,10 +1,12 @@
 package com.tenko.app.data.view
 
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.tenko.app.data.api.ApiClient
 import com.tenko.app.data.model.MedicineStatus
 import com.tenko.app.data.serializable.ReminderCreate
@@ -27,15 +29,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class MedicineViewModel : ViewModel() {
-
     // --- ESTADO DE DATOS (API) ---
     private val _medicines = MutableStateFlow<List<ReminderResponse>>(emptyList())
     val medicines: StateFlow<List<ReminderResponse>> = _medicines
@@ -65,10 +64,6 @@ class MedicineViewModel : ViewModel() {
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     // --- ESTADO DEL FORMULARIO ---
-    // Usamos ReminderCreate como base para el formulario
-    private val _uiState = MutableStateFlow(ReminderCreate(title = "", start_date = LocalDate.now()))
-    val uiState: StateFlow<ReminderCreate> = _uiState
-
     var isLoading by mutableStateOf(false)
     var isSaved by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
@@ -79,7 +74,8 @@ class MedicineViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             try {
-                val response = ApiClient.client.get("https://api-myst.onrender.com/reminders/medication")
+                val response =
+                    ApiClient.client.get("https://api-myst.onrender.com/reminders/medication")
                 if (response.status == HttpStatusCode.OK) {
                     _medicines.value = response.body()
                     errorMessage = null
@@ -92,25 +88,31 @@ class MedicineViewModel : ViewModel() {
         }
     }
 
-    private fun saveMedication() {
+    fun saveMedication(medication: ReminderCreate, navController: NavController) {
         viewModelScope.launch {
             isLoading = true
             try {
-                val form = _uiState.value.copy(type = true, status = 0)
-                val response = ApiClient.client.post("https://api-myst.onrender.com/reminders/medication") {
-                    contentType(ContentType.Application.Json)
-                    setBody(form)
-                }
+                val response =
+                    ApiClient.client.post("https://api-myst.onrender.com/reminders/medication") {
+                        contentType(ContentType.Application.Json)
+                        setBody(medication)
+                    }
 
                 if (response.status.isSuccess()) {
                     isSaved = true
+                    Toast.makeText(
+                        navController.context,
+                        "Recordatorio guardado",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     fetchMedicationReminders() // Refrescar lista
-                    resetForm()
+                    navController.popBackStack()
                     delay(2000)
                     isSaved = false
                 }
             } catch (e: Exception) {
                 errorMessage = "Error al guardar: ${e.localizedMessage}"
+                Toast.makeText(navController.context, errorMessage, Toast.LENGTH_LONG).show()
             } finally {
                 isLoading = false
             }
@@ -121,10 +123,11 @@ class MedicineViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val updateData = ReminderUpdate(status = newStatus)
-                val response = ApiClient.client.patch("https://api-myst.onrender.com/reminders/me/$id") {
-                    contentType(ContentType.Application.Json)
-                    setBody(updateData)
-                }
+                val response =
+                    ApiClient.client.patch("https://api-myst.onrender.com/reminders/me/$id") {
+                        contentType(ContentType.Application.Json)
+                        setBody(updateData)
+                    }
                 if (response.status.isSuccess()) {
                     fetchMedicationReminders()
                 }
@@ -137,7 +140,8 @@ class MedicineViewModel : ViewModel() {
     fun deleteReminder(id: Int) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.client.delete("https://api-myst.onrender.com/reminders/me/$id")
+                val response =
+                    ApiClient.client.delete("https://api-myst.onrender.com/reminders/me/$id")
                 if (response.status.isSuccess()) {
                     fetchMedicationReminders()
                 }
@@ -147,47 +151,7 @@ class MedicineViewModel : ViewModel() {
         }
     }
 
-    // --- MANEJO DE EVENTOS Y UI ---
-
-    fun onTitleChange(value: String) {
-        _uiState.update { it.copy(title = value) }
-    }
-
-    fun onDosageChange(value: String) {
-        _uiState.update { it.copy(dosage = value) }
-    }
-
-    fun onTimeSelected(hour: Int, minute: Int) {
-        val selectedTime = LocalTime.of(hour, minute)
-        _uiState.update { it.copy(day_time = selectedTime) }
-    }
-
-    fun toggleAfterMeal() {
-        _uiState.update { it.copy(after_meal = !it.after_meal) }
-    }
-
-    fun validateAndSave() {
-        if (_uiState.value.title.isBlank()) {
-            errorMessage = "El nombre es obligatorio"
-            return
-        }
-        saveMedication()
-    }
-
     fun setFilter(filter: MedicineStatus) {
         _filter.value = filter
-    }
-
-    private fun resetForm() {
-        _uiState.value = ReminderCreate(
-            title = "",
-            start_date = java.time.LocalDate.now(),
-            type = true
-        )
-    }
-
-    fun formatDisplayTime(time: LocalTime?): String {
-        if (time == null) return "--:--"
-        return time.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
     }
 }
