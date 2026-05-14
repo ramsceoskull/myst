@@ -4,12 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
@@ -31,51 +35,46 @@ fun DatePickerField(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
             value = value,
             onValueChange = {},
+            modifier = Modifier
+                .weight(1f)
+                .defaultMinSize(minHeight = 66.dp)
+                .clickable(onClick = onClick),
+            enabled = false,
             placeholder = { Text(label) },
             trailingIcon = {
-                if(value.isEmpty())
+                if (value.isEmpty())
                     Icon(
                         painter = painterResource(R.drawable.arrow_right_solid_full),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
             },
-            colors = colors,
-            enabled = false,
-            modifier = Modifier.weight(1f).height(55.dp).clickable(onClick = onClick),
+            singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = colors,
         )
+
         IconButton(
             onClick = onClick,
-            modifier = Modifier
-                .size(55.dp)
-                .background(
-                    color = PompAndPower,
-                    shape = RoundedCornerShape(12.dp)),
+            modifier = Modifier.size(66.dp),
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = PompAndPower,
+                contentColor = White
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.calendar_days_regular_full),
-                    contentDescription = "Icono de calendario",
-                    tint = White,
-                    modifier = Modifier.size(25.dp)
-                )
-                Icon(
-                    painter = painterResource(R.drawable.plus_solid_full),
-                    contentDescription = "Icono de agregar",
-                    tint = White,
-                    modifier = Modifier.size(15.dp)
-                )
-            }
+            Icon(
+                painter = painterResource(R.drawable.calendar_days_regular_full),
+                contentDescription = "Calendar icon",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(15.dp)
+            )
         }
     }
 }
