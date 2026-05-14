@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
@@ -19,7 +20,7 @@ fun SquaredOptionSelector(
 ) {
     LazyRow(
         modifier = modifier.padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
     ) {
         items(items = options, key = { it }) { option ->
             SquaredOption(
@@ -40,14 +41,14 @@ fun SquaredOptionSelector(
 ) {
     LazyRow(
         modifier = modifier.padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceAround
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
     ) {
         items(options, key = { it.name }) { option ->
             SquaredOption(
                 text = option.displayName,
                 selected = option == selectedOption,
                 onClick = { onOptionSelected(option) },
-                icon = if(option == Genre.FEMALE) R.drawable.venus_solid_full else R.drawable.mars_solid_full,
+                icon = if (option == Genre.FEMALE) R.drawable.venus_solid_full else R.drawable.mars_solid_full,
             )
         }
     }
