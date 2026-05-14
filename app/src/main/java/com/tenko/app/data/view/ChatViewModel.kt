@@ -1,5 +1,6 @@
 package com.tenko.app.data.view
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tenko.app.data.api.ApiClient
@@ -63,7 +64,10 @@ class ChatViewModel : ViewModel() {
         } else {
             when {
                 // Caso A: El usuario quiere el historial
-                text.contains("historial", ignoreCase = true) || text.contains("cuestionario", ignoreCase = true) -> {
+                text.contains("historial", ignoreCase = true) || text.contains(
+                    "cuestionario",
+                    ignoreCase = true
+                ) -> {
                     startQuestionnaire()
                 }
 
@@ -94,23 +98,37 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             _isTyping.value = true
             try {
-                val response =
+                val httpResponse =
                     ApiClient.client.post("https://api-myst.onrender.com/assistant/log-day") {
                         contentType(ContentType.Application.Json)
                         setBody(ChatMessage(message = text))
                     }
 
-                if (response.status == HttpStatusCode.OK) {
-                    val apiResult = response.body<AssistantResponse>()
+                if (httpResponse.status == HttpStatusCode.OK) {
+                    val apiResult = httpResponse.body<AssistantResponse>()
 
-                    // Aquí transformamos el JSON en algo humano y variado
-                    val humanResponse = formatAssistantSpeech(apiResult)
-                    addAssistantMessage(humanResponse)
+                    // Extraemos la respuesta empática de la IA
+                    val aiSpeech = apiResult.data_extracted.response
+
+                    if (apiResult.data_extracted.is_red_flag) {
+                        // Priorizar mensaje de seguridad si hay bandera roja
+                        addAssistantMessage(" He detectado algo que requiere atención: $aiSpeech")
+                    } else {
+                        addAssistantMessage(aiSpeech)
+                    }
+
+                    // Opcional: Si el intent fue start_period, podrías disparar una pequeña confeti en UI
+                    if (apiResult.intent == "start_period") {
+                        // triggerPeriodUIEvent()
+                    }
+
                 } else {
-                    addAssistantMessage("Hubo un pequeño error técnico, pero aquí sigo para escucharte. 💕")
+                    val errorMsg = "No pude procesar eso, pero cuéntame más. "
+                    addAssistantMessage(errorMsg)
                 }
             } catch (e: Exception) {
-                addAssistantMessage("Parece que hay un problema de conexión. Inténtalo de nuevo en un momento.")
+                addAssistantMessage("Tuve un problema de conexión, ¿me lo repites? ")
+                Log.e("ChatViewModel", "Error en log-day: ${e.message}")
             } finally {
                 _isTyping.value = false
             }
@@ -159,7 +177,10 @@ class ChatViewModel : ViewModel() {
                 val updatePayload = when (fieldName) {
                     "last_name" -> ClinicalHistoryUpdate(last_name = newValue as? String)
                     "second_last_name" -> ClinicalHistoryUpdate(second_last_name = newValue as? String)
-                    "birthdate" -> ClinicalHistoryUpdate(birthdate = (newValue as? String)?.let { java.time.LocalDate.parse(it) })
+                    "birthdate" -> ClinicalHistoryUpdate(birthdate = (newValue as? String)?.let {
+                        java.time.LocalDate.parse(it)
+                    })
+
                     "sex_legally" -> ClinicalHistoryUpdate(sex_legally = newValue as? String)
                     "sex_biology" -> ClinicalHistoryUpdate(sex_biology = newValue as? String)
                     "depression_screening" -> ClinicalHistoryUpdate(depression_screening = newValue as? Boolean)
@@ -167,15 +188,24 @@ class ChatViewModel : ViewModel() {
                     "memory_screening" -> ClinicalHistoryUpdate(memory_screening = newValue as? Boolean)
                     "memory_alterations" -> ClinicalHistoryUpdate(memory_alterations = newValue as? Boolean)
                     "dementia" -> ClinicalHistoryUpdate(dementia = newValue as? Boolean)
-                    "urinary_incontinence_screening" -> ClinicalHistoryUpdate(urinary_incontinence_screening = newValue as? Boolean)
+                    "urinary_incontinence_screening" -> ClinicalHistoryUpdate(
+                        urinary_incontinence_screening = newValue as? Boolean
+                    )
+
                     "urinary_incontinence" -> ClinicalHistoryUpdate(urinary_incontinence = newValue as? Boolean)
                     "anemia_screening" -> ClinicalHistoryUpdate(anemia_screening = newValue as? Boolean)
                     "obesity_screening" -> ClinicalHistoryUpdate(obesity_screening = newValue as? Boolean)
                     "osteoporosis_screening" -> ClinicalHistoryUpdate(osteoporosis_screening = newValue as? Boolean)
                     "diabetes_mellitus" -> ClinicalHistoryUpdate(diabetes_mellitus = newValue as? String)
                     "arterial_hypertension" -> ClinicalHistoryUpdate(arterial_hypertension = newValue as? Boolean)
-                    "sustance_use" -> ClinicalHistoryUpdate(sustance_use = (newValue as? String)?.split(", ")?.map { it.trim() })
-                    "std" -> ClinicalHistoryUpdate(std = (newValue as? String)?.split(", ")?.map { it.trim() })
+                    "sustance_use" -> ClinicalHistoryUpdate(
+                        sustance_use = (newValue as? String)?.split(", ")?.map { it.trim() }
+                    )
+
+                    "std" -> ClinicalHistoryUpdate(
+                        std = (newValue as? String)?.split(", ")?.map { it.trim() }
+                    )
+
                     "turner_syndrome_screening" -> ClinicalHistoryUpdate(turner_syndrome_screening = newValue as? Boolean)
                     "endometriosis_screening" -> ClinicalHistoryUpdate(endometriosis_screening = newValue as? Boolean)
                     "endometriosis" -> ClinicalHistoryUpdate(endometriosis = newValue as? Boolean)
@@ -187,10 +217,11 @@ class ChatViewModel : ViewModel() {
                 }
 
                 if (updatePayload != null) {
-                    val response = ApiClient.client.patch("https://api-myst.onrender.com/clinical-history/me") {
-                        contentType(ContentType.Application.Json)
-                        setBody(updatePayload)
-                    }
+                    val response =
+                        ApiClient.client.patch("https://api-myst.onrender.com/clinical-history/me") {
+                            contentType(ContentType.Application.Json)
+                            setBody(updatePayload)
+                        }
 
                     if (response.status.isSuccess()) {
                         // Actualizamos el estado local para que la UI se refresque instantáneamente
@@ -239,7 +270,8 @@ class ChatViewModel : ViewModel() {
     fun loadClinicalHistory() {
         viewModelScope.launch {
             try {
-                val response = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+                val response =
+                    ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
                 if (response.status == HttpStatusCode.OK) {
                     val data = response.body<ClinicalHistoryResponse>()
 
@@ -285,38 +317,44 @@ class ChatViewModel : ViewModel() {
             var retryCount = 0
             val maxAttempts = 3
             var success = false
-            lateinit var checkResponse : HttpResponse
+            lateinit var checkResponse: HttpResponse
 
             try {
                 // Creamos el objeto siguiendo tus reglas de negocio
                 val historyObject = mapResponsesToData()
 
                 while (retryCount < maxAttempts && !success) {
-                    checkResponse = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+                    checkResponse =
+                        ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
 
                     when (checkResponse.status) {
                         HttpStatusCode.OK -> {
                             // UPDATE: Usamos ClinicalHistoryUpdate
-                            val updateResp = ApiClient.client.patch("https://api-myst.onrender.com/clinical-history/me") {
-                                contentType(ContentType.Application.Json)
-                                setBody(historyObject)
-                            }
+                            val updateResp =
+                                ApiClient.client.patch("https://api-myst.onrender.com/clinical-history/me") {
+                                    contentType(ContentType.Application.Json)
+                                    setBody(historyObject)
+                                }
                             success = updateResp.status.isSuccess()
                         }
+
                         HttpStatusCode.NotFound -> {
                             // CREATE: Usamos ClinicalHistoryCreate
                             // (Puedes convertir el objeto o simplemente pasar historyObject si los campos coinciden)
-                            val createResp = ApiClient.client.post("https://api-myst.onrender.com/clinical-history/") {
-                                contentType(ContentType.Application.Json)
-                                setBody(historyObject)
-                            }
+                            val createResp =
+                                ApiClient.client.post("https://api-myst.onrender.com/clinical-history/") {
+                                    contentType(ContentType.Application.Json)
+                                    setBody(historyObject)
+                                }
                             success = createResp.status.isSuccess()
                         }
+
                         HttpStatusCode.Unauthorized -> {
                             retryCount++
                             delay(1000)
                             continue
                         }
+
                         else -> break
                     }
                 }
@@ -380,7 +418,8 @@ class ChatViewModel : ViewModel() {
             sexually_active = responses["sexually_active"] as? Boolean,
 
             // Manejo de Int: Asegurar que sea numérico
-            miscarriages_abortions = (responses["miscarriages_abortions"] as? String)?.toIntOrNull() ?: 0
+            miscarriages_abortions = (responses["miscarriages_abortions"] as? String)?.toIntOrNull()
+                ?: 0
         )
     }
 
@@ -388,7 +427,8 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+                val response =
+                    ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
 
                 if (response.status == HttpStatusCode.OK) {
                     _historyData.value = response.body<ClinicalHistoryResponse>()
@@ -437,6 +477,11 @@ class ChatViewModel : ViewModel() {
     }
 
     private fun addAssistantMessage(text: String, questionRef: ClinicalQuestion? = null) {
-        _messages.value += ChatUIModel(id = System.currentTimeMillis(), text = text, isUser = false, questionRef)
+        _messages.value += ChatUIModel(
+            id = System.currentTimeMillis(),
+            text = text,
+            isUser = false,
+            questionRef
+        )
     }
 }
