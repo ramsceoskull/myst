@@ -6,13 +6,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -25,6 +23,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.White
@@ -70,20 +69,19 @@ fun SquaredOption(
             .padding(horizontal = 25.dp, vertical = 15.dp),
         content = {
             Row(
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 icon?.let {
                     Icon(
                         painter = painterResource(icon),
                         contentDescription = "$text icon",
-                        tint = textColor,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
+                        tint = textColor
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
 
-                Text(text = text, color = textColor)
+                Text(text = text, color = textColor, textAlign = TextAlign.Center)
             }
         }
     )
