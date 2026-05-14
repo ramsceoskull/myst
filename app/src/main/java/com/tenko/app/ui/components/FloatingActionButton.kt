@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -20,7 +21,9 @@ import com.tenko.app.ui.theme.White
 fun FloatingActionButton(icon: Int, isColored: Boolean = true, onClick: () -> Unit) {
     FloatingActionButton(
         onClick = onClick,
-        containerColor = PompAndPower
+        shape = RoundedCornerShape(12.dp),
+        containerColor = PompAndPower,
+        contentColor = White
     ) {
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -32,31 +35,15 @@ fun FloatingActionButton(icon: Int, isColored: Boolean = true, onClick: () -> Un
             Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(40.dp),
+                tint = color
             )
 
             Icon(
                 painter = painterResource(R.drawable.plus_solid_full),
-                contentDescription = "Agregar",
-                modifier = Modifier.size(25.dp),
-                tint = White
+                contentDescription = "Add icon",
+                modifier = Modifier.size(25.dp)
             )
         }
-    }
-}
-
-@Composable
-fun AddCalendarEvent(onClick: () -> Unit) {
-    FloatingActionButton(
-        onClick = onClick,
-        containerColor = PompAndPower
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.plus_solid_full),
-            contentDescription = "Registrar síntoma",
-            Modifier.size(24.dp),
-            tint = White
-        )
     }
 }
