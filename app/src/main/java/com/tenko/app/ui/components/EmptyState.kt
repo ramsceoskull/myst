@@ -1,6 +1,7 @@
 package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,7 +54,7 @@ fun EmptyMedicationState(filter: MedicineStatus) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(vertical = 30.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -79,6 +80,76 @@ fun EmptyMedicationState(filter: MedicineStatus) {
             text = description,
             fontSize = 16.sp,
             color = Color.Gray,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun EmptyContactState(
+    icon: Int,
+    title: String,
+    description: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp, vertical = 30.dp),
+        verticalArrangement = spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.size(140.dp),
+            tint = PompAndPower.copy(alpha = 0.6f)
+        )
+
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = description,
+            color = Color.Gray,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun EmptyAppointmentState(
+    icon: Int,
+    title: String,
+    description: String
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+            tint = PompAndPower.copy(alpha = 0.6f)
+        )
+
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = description,
+            color = Color.Gray,
+            fontSize = 16.sp,
             textAlign = TextAlign.Center
         )
     }
