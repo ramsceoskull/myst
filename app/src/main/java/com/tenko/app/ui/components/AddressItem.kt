@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenko.app.data.serializable.AddressResponse
@@ -55,27 +58,39 @@ fun AddressItem(
         ) {
             RadioButton(
                 selected = address.is_selected,
-                onClick = onSelect
+                onClick = onSelect,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = Tekhelet,
+                    unselectedColor = RaisinBlack
+                )
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = address.name,
+                    color = if (address.is_selected) Tekhelet else RaisinBlack,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (address.is_selected) Tekhelet else RaisinBlack
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = "${address.street}, ${address.zip_code} ${address.city}, ${address.state}",
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                 )
             }
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            TextButton(onClick = onEdit) {
-                Text("Editar")
-            }
+            TextButton(
+                onClick = onEdit,
+                colors = ButtonDefaults.textButtonColors(contentColor = Tekhelet),
+                content = {
+                    Text(
+                        text = "Editar",
+                        fontSize = 14.sp,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+            )
         }
     }
 }
