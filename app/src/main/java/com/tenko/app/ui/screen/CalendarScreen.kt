@@ -1,6 +1,7 @@
 package com.tenko.app.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,12 +39,13 @@ import androidx.navigation.NavController
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
+import com.tenko.app.R
 import com.tenko.app.data.serializable.DailyLogCreate
 import com.tenko.app.data.serializable.DailyLogResponse
 import com.tenko.app.data.view.CycleViewModel
-import com.tenko.app.ui.components.AddCalendarEvent
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.BottomNavigationBar
+import com.tenko.app.ui.components.FloatingActionButton
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -51,13 +54,12 @@ import java.time.YearMonth
 @Composable
 fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = viewModel()) {
     val currentMonth = remember { YearMonth.now() }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    val today = LocalDate.now()
+    var selectedDate by remember { mutableStateOf(today) }
     var showSheet by remember { mutableStateOf(false) }
 
-    // Obtenemos el log de la fecha seleccionada para pasarlo al BottomSheet
     val selectedDateLog = viewModel.dailyLogs.find { it.date == selectedDate }
 
-    // Cargar datos al iniciar
     LaunchedEffect(Unit) { viewModel.fetchData() }
 
     val state = rememberCalendarState(
@@ -68,8 +70,14 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
     )
 
     Scaffold(
-        topBar = { AppTopBar(title = "Calendario", onBackClick = { navController.popBackStack() }) },
-        floatingActionButton = { AddCalendarEvent({ showSheet = true }) },
+        topBar = {
+            AppTopBar(
+                title = "Calendario",
+                onBackClick = { navController.popBackStack() })
+        },
+        floatingActionButton = {
+            FloatingActionButton(R.drawable.note_sticky_solid_full) { showSheet = true }
+        },
         bottomBar = { BottomNavigationBar(navController) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
@@ -79,31 +87,54 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
                 state = state,
                 dayContent = { day ->
                     val date = day.date
+                    val isFutureDate = date.isAfter(today)
                     val existingLog = viewModel.dailyLogs.find { it.date == date }
 
-                    // LÓGICA DE COLORES MEJORADA
+                    // LÓGICA DE COLORES ACTUALIZADA
                     val dayColor = when {
-                        // 1. Sangrado Real (Flujo > 0) -> Rosa Fuerte
-                        existingLog?.menstrual_flow != null && existingLog.menstrual_flow > 0 -> Color(0xFFFF6FAE)
+                        // 1. Sangrado Real (Datos históricos) -> Rosa Fuerte
+                        existingLog?.menstrual_flow != null && existingLog.menstrual_flow > 0 -> Color(
+                            0xFFFF6FAE
+                        )
 
-                        // 2. Ovulación Estimada (Aprox. día 14 de un ciclo de 28) -> Azul
+                        // 2. Ovulación Pasada (Mitad de ciclos reales registrados) -> Azul
                         viewModel.cycles.any { cycle ->
-                            val ovulationDate = cycle.start_date?.plusDays(14)
-                            date == ovulationDate
+                            val start = cycle.start_date
+                            val end = cycle.end_date
+                            if (start != null && end != null) {
+                                val totalDays =
+                                    java.time.temporal.ChronoUnit.DAYS.between(start, end)
+                                date == start.plusDays(totalDays / 2)
+                            } else false
                         } -> Color(0xFF81D4FA)
 
-                        // 3. Días del ciclo actual (Sin sangrado reportado aún) -> Rosa Tenue
-                        viewModel.cycles.any { cycle ->
-                            val end = cycle.end_date ?: LocalDate.now()
-                            !date.isBefore(cycle.start_date) && !date.isAfter(end)
-                        } -> Color(0xFFFF6FAE).copy(alpha = 0.3f)
-
-                        // 4. Predicción Futura -> Rojo suave
+                        // 3. PREDICCIÓN DE OVULACIÓN FUTURA -> Azul Tenue
                         viewModel.prediction?.let { pred ->
-                            val start = LocalDate.parse(pred.predicted_cycle_range.start)
-                            val end = LocalDate.parse(pred.predicted_cycle_range.end)
-                            !date.isBefore(start) && !date.isAfter(end)
-                        } == true -> Color.Red.copy(alpha = 0.2f)
+                            val startDate =
+                                LocalDate.parse(pred.predicted_cycle_range.predicted_next_period.toString())
+                            val cycleLength = pred.predicted_cycle_range.predicted_length
+
+                            // Calculamos el día central del ciclo futuro
+                            val futureOvulationDate = startDate.plusDays((cycleLength / 2).toLong())
+
+                            date == futureOvulationDate
+                        } == true -> Color(0xFF81D4FA).copy(alpha = 0.5f) // Azul con transparencia para distinguir que es predicción
+
+                        // 4. PREDICCIÓN DE SANGRADO FUTURO -> Rojo tenue
+                        viewModel.prediction?.let { pred ->
+                            val startDate =
+                                LocalDate.parse(pred.predicted_cycle_range.predicted_next_period.toString())
+                            val length = pred.predicted_cycle_range.predicted_length
+
+                            val bleedingDuration = when {
+                                length < 25 -> 4L
+                                length <= 32 -> 5L
+                                else -> 6L
+                            }
+
+                            val endDate = startDate.plusDays(bleedingDuration - 1)
+                            !date.isBefore(startDate) && !date.isAfter(endDate)
+                        } == true -> Color(0xFFFFCDD2)
 
                         else -> Color.Transparent
                     }
@@ -113,16 +144,18 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
                         selected = date == selectedDate,
                         hasEvent = existingLog != null,
                         statusColor = dayColor,
+                        isClickable = !isFutureDate, // Bloqueo de días futuros
                         onClick = {
-                            selectedDate = date
-                            showSheet = true
+                            if (!isFutureDate) {
+                                selectedDate = date
+                                showSheet = true
+                            }
                         }
                     )
                 }
             )
         }
 
-        // UN SOLO SHEET con la data vinculada correctamente
         if (showSheet) {
             DailyLogFormSheet(
                 date = selectedDate,
@@ -131,7 +164,7 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
                 onSave = { logData ->
                     viewModel.createDailyLog(logData) {
                         showSheet = false
-                        viewModel.fetchData() // Refrescar tras guardar
+                        viewModel.fetchData()
                     }
                 }
             )
@@ -145,13 +178,17 @@ fun DayCell(
     selected: Boolean,
     hasEvent: Boolean,
     statusColor: Color,
+    isClickable: Boolean,
     onClick: () -> Unit
 ) {
+    val today = LocalDate.now()
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(4.dp)
-            .clickable { onClick() }
+            .alpha(if (isClickable) 1f else 0.3f) // Los días futuros se ven más claros
+            .clickable(enabled = isClickable) { onClick() }
     ) {
         Box(
             modifier = Modifier
@@ -159,13 +196,17 @@ fun DayCell(
                 .background(
                     if (selected) Color(0xFF7B61FF) else statusColor,
                     CircleShape
+                )
+                .then(
+                    // Opcional: Borde para el día de hoy
+                    if (day == today) Modifier.border(1.dp, Color.Gray, CircleShape) else Modifier
                 ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 day.dayOfMonth.toString(),
                 color = if (selected) Color.White else Color.Black,
-                fontWeight = if (statusColor != Color.Transparent) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (statusColor != Color.Transparent || day == today) FontWeight.Bold else FontWeight.Normal
             )
         }
 
@@ -179,6 +220,7 @@ fun DayCell(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DailyLogFormSheet(
@@ -193,8 +235,10 @@ fun DailyLogFormSheet(
     var notes by remember { mutableStateOf(existingLog?.notes ?: "") }
 
     // Mapeo de tus Enums de Python
-    val flowOptions = mapOf(0 to "Nulo", 1 to "Ligero", 2 to "Medio", 3 to "Abundante", 4 to "Goteo")
-    val moodOptions = mapOf(1 to "Triste", 2 to "Enojada", 3 to "Neutral", 4 to "Feliz", 5 to "Muy feliz")
+    val flowOptions =
+        mapOf(0 to "Nulo", 1 to "Ligero", 2 to "Medio", 3 to "Abundante", 4 to "Goteo")
+    val moodOptions =
+        mapOf(1 to "Triste", 2 to "Enojada", 3 to "Neutral", 4 to "Feliz", 5 to "Muy feliz")
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -227,13 +271,15 @@ fun DailyLogFormSheet(
 
             Button(
                 onClick = {
-                    onSave(DailyLogCreate(
-                        date = date,
-                        menstrual_flow = flow,
-                        mood = mood,
-                        weight = weight.toFloatOrNull(),
-                        notes = notes.ifBlank { null }
-                    ))
+                    onSave(
+                        DailyLogCreate(
+                            date = date,
+                            menstrual_flow = flow,
+                            mood = mood,
+                            weight = weight.toFloatOrNull(),
+                            notes = notes.ifBlank { null }
+                        )
+                    )
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -242,6 +288,7 @@ fun DailyLogFormSheet(
         }
     }
 }
+
 @Composable
 fun CalendarHeader(state: CalendarState) {
     val month = state.firstVisibleMonth.yearMonth
@@ -253,9 +300,23 @@ fun CalendarHeader(state: CalendarState) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            month.month.name,
+            text = when (month.month.name) {
+                "JANUARY" -> "Enero"
+                "FEBRUARY" -> "Febrero"
+                "MARCH" -> "Marzo"
+                "APRIL" -> "Abril"
+                "MAY" -> "Mayo"
+                "JUNE" -> "Junio"
+                "JULY" -> "Julio"
+                "AUGUST" -> "Agosto"
+                "SEPTEMBER" -> "Septiembre"
+                "OCTOBER" -> "Octubre"
+                "NOVEMBER" -> "Noviembre"
+                "DECEMBER" -> "Diciembre"
+                else -> month.month.name
+            },
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+//            fontWeight = FontWeight.SemiBold
         )
 
         Text(
@@ -289,8 +350,6 @@ fun CatalogChips(
         }
     }
 }
-
-
 
 
 //@OptIn(ExperimentalMaterial3Api::class)
