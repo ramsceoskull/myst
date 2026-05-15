@@ -13,12 +13,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.tenko.app.R
 import com.tenko.app.data.api.TokenManager
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.DoctorViewModel
 import com.tenko.app.data.view.MedicineSearchViewModel
 import com.tenko.app.data.view.NotificationViewModel
 import com.tenko.app.ui.components.NotificationsOverlay
+import com.tenko.app.ui.screen.AddAppointmentScreen
 import com.tenko.app.ui.screen.AddDoctorScreen
 import com.tenko.app.ui.screen.AddMedicationScreen
 import com.tenko.app.ui.screen.AddMedicineScreen
@@ -114,9 +116,9 @@ fun AppNavigation(tokenManager: TokenManager) {
                     notificationViewModel,
                 )
             }
-            composable("terms") {
+            composable(AppScreens.TermsScreen.route) {
                 PdfViewerScreen(
-                    pdfUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+                    pdfResId = R.raw.terminos,
                     onAccept = {
                         navController.previousBackStackEntry
                             ?.savedStateHandle
@@ -124,9 +126,20 @@ fun AppNavigation(tokenManager: TokenManager) {
 
                         navController.popBackStack()
                     },
-                    onDismiss = {
+                    onDismiss = { navController.popBackStack() }
+                )
+            }
+            composable(AppScreens.PrivacyPolicyScreen.route) {
+                PdfViewerScreen(
+                    pdfResId = R.raw.politicas,
+                    onAccept = {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("privacyAccepted", true)
+
                         navController.popBackStack()
-                    }
+                    },
+                    onDismiss = { navController.popBackStack() }
                 )
             }
             composable(AppScreens.NotificationsOverlay.route) {
@@ -177,7 +190,7 @@ fun AppNavigation(tokenManager: TokenManager) {
                     actionLabel = "Iniciar Sesión",
                     email = email,
                     onClick = { navController.navigate(AppScreens.LoginScreen.route) },
-                    onResendClick = { /* Lógica para reenviar el correo */ }
+//                    onResendClick = { /* Lógica para reenviar el correo */ }
                 )
             }
             composable(
@@ -208,7 +221,7 @@ fun AppNavigation(tokenManager: TokenManager) {
                             navController.navigate(AppScreens.LoginScreen.route)
                         }
                     },
-                    onResendClick = { /* Lógica para reenviar el correo */ }
+//                    onResendClick = { /* Lógica para reenviar el correo */ }
                 )
             }
             composable(AppScreens.AddDoctorScreen.route) { AddDoctorScreen(onBackClick = { navController.popBackStack() }) }
@@ -224,9 +237,7 @@ fun AppNavigation(tokenManager: TokenManager) {
                 val doctorId = backStackEntry.arguments?.getInt("doctorId")
                 val doctor = doctorViewModel.contacts.find { it.id_contact == doctorId }
 
-                doctor?.let {
-                    DoctorDetailsScreen(navController, it)
-                }
+                doctor?.let { DoctorDetailsScreen(navController, it) }
             }
         }
     }
