@@ -1,8 +1,11 @@
 package com.tenko.app.navigation
 
 sealed class AppScreens(val route: String) {
+    object TermsScreen : AppScreens("terms_screen")
+    object PrivacyPolicyScreen : AppScreens("privacy_policy_screen")
     object MainScreen : AppScreens("main_screen")
     object AddMedicationScreen : AppScreens("add_medication_screen")
+
     object SplashScreen : AppScreens("splash_screen")
     object LoginScreen : AppScreens("login_screen")
     object SignupScreen : AppScreens("signup_screen")
