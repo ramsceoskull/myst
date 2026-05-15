@@ -135,11 +135,11 @@ fun TermsAndPrivacyText(navController: NavController) {
             ).firstOrNull()?.let {
                 when (it.tag) {
                     "TERMS" -> {
-                        navController.navigate("terms")
+                        navController.navigate(AppScreens.TermsScreen.route)
                     }
 
                     "PRIVACY" -> {
-                        navController.navigate("privacy")
+                        navController.navigate(AppScreens.PrivacyPolicyScreen.route)
                     }
                 }
             }
