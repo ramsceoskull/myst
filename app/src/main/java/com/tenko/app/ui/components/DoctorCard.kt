@@ -127,11 +127,12 @@ fun DoctorCard(
 @Composable
 fun FlipCard(
     icon: Int?,
+    flipped: Boolean,
+    onFlip: (Boolean) -> Unit,
     doctorDetails: List<String?>,
     clinicDetails: List<String?>,
     colors: List<Color>
 ) {
-    var flipped by remember { mutableStateOf(false) }
 
     val rotation by animateFloatAsState(
         targetValue = if (flipped) 180f else 0f,
@@ -152,23 +153,6 @@ fun FlipCard(
         label = "elevation_animation"
     )
 
-    /*val fullText = if (flipped) "Presiona nuevamente para regresar" else "Toca la tarjeta para ver más información"
-    var animatedText by remember(fullText) { mutableStateOf("") }
-    LaunchedEffect(fullText) {
-        animatedText = ""
-        fullText.forEachIndexed { index, _ ->
-            delay(25)
-            animatedText = fullText.take(index + 1)
-        }
-    }
-    Text(
-        text = animatedText,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center,
-        fontSize = 14.sp,
-        color = Color.Gray
-    )*/
-
     Column {
         Card(
             modifier = Modifier
@@ -179,10 +163,10 @@ fun FlipCard(
 //                    PROFUNDIDAD 3D
                     cameraDistance = 28f * density
                 }
-                .clickable { flipped = !flipped },
+                .clickable { onFlip(!flipped) },
             shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(elevation),
-            colors = CardDefaults.cardColors(containerColor = colors[0])
+            colors = CardDefaults.cardColors(containerColor = colors[0]),
+            elevation = CardDefaults.cardElevation(elevation)
         ) {
             Box(
                 modifier = Modifier
@@ -205,17 +189,17 @@ fun FlipCard(
                         ) {
                             Text(
                                 text = doctorDetails[0] ?: "Nombres sin proporcionar",
+                                color = colors[1],
                                 fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = colors[1]
+                                fontWeight = FontWeight.SemiBold
                             )
 
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
                                 text = doctorDetails[1] ?: "Sin especialidad",
-                                fontSize = 14.sp,
-                                color = colors[2]
+                                color = colors[2],
+                                fontSize = 14.sp
                             )
                         }
 
@@ -284,8 +268,8 @@ fun FlipCard(
                                 Icon(
                                     painter = painterResource(id = R.drawable.hospital_regular_full),
                                     contentDescription = "Hospital Icon",
-                                    tint = colors[0],
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(40.dp),
+                                    tint = colors[0]
                                 )
                             }
                         )
@@ -303,69 +287,22 @@ fun FlipCard(
             fontSize = 12.sp,
             textAlign = TextAlign.Center
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        HorizontalDivider(color = colors[0].copy(0.6f), thickness = 2.dp)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        AnimatedContent(
-            targetState = flipped,
-            transitionSpec = {
-                fadeIn(
-                    animationSpec = tween(900)
-                ) + slideInVertically(
-                    initialOffsetY = { it / 2 }
-                ) togetherWith fadeOut(
-                    animationSpec = tween(900)
-                ) + slideOutVertically(
-                    targetOffsetY = { -it / 2 }
-                )
-            },
-            label = "bottom_text_animation"
-        ) { isFlipped ->
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (!isFlipped) {
-                    Text(
-                        text = "Contacto disponible en...",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = clinicDetails[2] ?: "Sin contacto de clínica",
-                        fontSize = 12.sp,
-                        color = Color.LightGray,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = "Acerca de su especialidad...",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = doctorDetails[2] ?: "Sin descripción de especialidad",
-                        fontSize = 12.sp,
-                        color = Color.LightGray,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                } else {
-                    Text(
-                        text = "Clínica ubicada en...",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = clinicDetails[3] ?: "Sin dirección de clínica",
-                        fontSize = 12.sp,
-                        color = Color.LightGray,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }
-            }
-        }
     }
 }
+
+/*val fullText = if (flipped) "Presiona nuevamente para regresar" else "Toca la tarjeta para ver más información"
+var animatedText by remember(fullText) { mutableStateOf("") }
+LaunchedEffect(fullText) {
+    animatedText = ""
+    fullText.forEachIndexed { index, _ ->
+        delay(25)
+        animatedText = fullText.take(index + 1)
+    }
+}
+Text(
+    text = animatedText,
+    modifier = Modifier.fillMaxWidth(),
+    textAlign = TextAlign.Center,
+    fontSize = 14.sp,
+    color = Color.Gray
+)*/
