@@ -2,6 +2,7 @@ package com.tenko.app.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,11 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,23 +34,14 @@ import com.tenko.app.ui.theme.White
 
 @Composable
 fun SuggestionsCard(navController: NavController) {
-    /*val gradient = Brush.horizontalGradient(
-        colors = listOf(
-            Tekhelet, // morado
-            AntiFlashWhite  // gris claro
-        )
-    )*/
     val gradient = Brush.linearGradient(
-        colors = listOf(
-            Tekhelet,
-            AntiFlashWhite
-        ),
+        colors = listOf(Tekhelet, AntiFlashWhite),
         start = Offset(0f, 600f),
         end = Offset(800f, 0f)
     )
 
     Text(
-        text = "Obten sugerencias de salud",
+        text = "Obtén sugerencias de salud",
         fontSize = 20.sp,
         fontWeight = FontWeight.SemiBold
     )
@@ -68,24 +60,23 @@ fun SuggestionsCard(navController: NavController) {
             verticalAlignment = Alignment.Bottom
         ) {
             Image(
-                contentDescription = "Tenko Avatar",
                 painter = painterResource(R.drawable.tenko_avatar),
+                contentDescription = "Tenko Avatar",
                 modifier = Modifier.size(140.dp)
             )
 
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 16.dp),
+                verticalArrangement = spacedBy(12.dp)
             ) {
                 Text(
                     text = "Algunas de tus preguntas pueden ser respondidas por tus especialistas, sin necesidad de una consulta formal.",
                     fontSize = 14.sp,
                 )
 
-                Spacer(Modifier.height(12.dp))
-
-                Button(
+                TextButton(
                     onClick = { navController.navigate(AppScreens.DoctorsScreen.route) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,13 +85,14 @@ fun SuggestionsCard(navController: NavController) {
                     colors = ButtonDefaults.buttonColors(
                         containerColor = White,
                         contentColor = Tekhelet
-                    )
-                ) {
-                    Text(
-                        text = "Contactar a un doctor",
-                        fontSize = 12.sp
-                    )
-                }
+                    ),
+                    content = {
+                        Text(
+                            text = "Contactar a un doctor",
+                            fontSize = 12.sp
+                        )
+                    }
+                )
             }
         }
     }
