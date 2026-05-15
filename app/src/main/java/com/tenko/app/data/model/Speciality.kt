@@ -5,6 +5,10 @@ enum class Speciality(val displayName: String, val description: String) {
         "MÉDICO GENERAL",
         "Profesional dedicado al cuidado integral de la salud, enfocado en la prevención, diagnóstico inicial y tratamiento de enfermedades comunes en pacientes de todas las edades."
     ),
+    INTERNIST(
+        "INTERNISTA",
+        "Especialista en medicina interna enfocado en la prevención, diagnóstico y tratamiento no quirúrgico de enfermedades complejas en adultos, incluyendo padecimientos crónicos y multisistémicos."
+    ),
     CARDIOLOGIST(
         "CARDIÓLOGO",
         "Especialista en el estudio, diagnóstico y tratamiento de trastornos del corazón y del sistema circulatorio, incluyendo hipertensión y enfermedades coronarias."
@@ -37,6 +41,10 @@ enum class Speciality(val displayName: String, val description: String) {
         "GINECÓLOGO",
         "Especialista dedicado a la salud del sistema reproductivo femenino, el control del embarazo, el parto y el tratamiento de patologías específicas de la mujer."
     ),
+    OBSTETRICIAN(
+        "OBSTETRA",
+        "Especialista en la atención del embarazo, el parto y el puerperio, encargado del cuidado integral de la salud materna y fetal durante la gestación y el nacimiento."
+    ),
     ONCOLOGIST(
         "ONCÓLOGO",
         "Médico experto en el diagnóstico y tratamiento de diversos tipos de cáncer mediante terapias médicas, radioterapia o coordinación de cirugías oncológicas."
@@ -50,7 +58,7 @@ enum class Speciality(val displayName: String, val description: String) {
         "Especialista en enfermedades del aparato digestivo y órganos asociados, incluyendo el esófago, estómago, intestinos, hígado, páncreas y vesícula biliar."
     ),
     PULMONOLOGIST(
-        "PULMONÓLOGO",
+        "NEUMÓLOGO",
         "Médico especializado en el diagnóstico y tratamiento de enfermedades del sistema respiratorio, incluyendo los pulmones, los bronquios y la pleura."
     ),
     RHEUMATOLOGIST(
