@@ -124,29 +124,33 @@ fun BottomBar(
     totalSteps: Int
 ) {
     val progress = (currentStep + 1) / totalSteps.toFloat()
+    /*for (i in 0 until totalSteps) {
+        val dotColor = if (i <= currentStep) Tekhelet else AntiFlashWhite
+        Text(
+            text = "●",
+            fontSize = 12.sp,
+            color = dotColor
+        )
+    }*/
 
     Surface(
-        shape = RoundedCornerShape(
-            topStart = 12.dp,
-            topEnd = 12.dp
-        ),
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
         shadowElevation = 8.dp,
     ) {
         NavigationBar(
             modifier = Modifier.shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                clip = false,
                 ambientColor = Color.Black,
-                spotColor = Color.Black,
-                clip = false
+                spotColor = Color.Black
             ),
             containerColor = White,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 LinearProgressIndicator(
                     progress = { progress },
@@ -157,44 +161,47 @@ fun BottomBar(
                     trackColor = AntiFlashWhite,
                     strokeCap = StrokeCap.Round,
                 )
-                Text("Paso ${currentStep + 1} de $totalSteps")
+
+                Text(
+                    text = "Paso ${currentStep + 1} de $totalSteps",
+                    fontSize = 16.sp,
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                 ) {
-                    Button(
-                        onClick = { onPreviousStep() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Tekhelet,
-                            contentColor = White
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 8.dp),
-                        content = {
-                            Text(if (currentStep > 0) "Atrás" else "Regresar")
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Button(
-                        onClick = { onNextStep() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Tekhelet,
-                            contentColor = White
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 8.dp),
-                        content = {
-                            Text(if (currentStep < totalSteps - 1) "Siguiente" else "Finalizar")
-                        }
-                    )
+                    for (i in 1..2) {
+                        TextButton(
+                            onClick = {
+                                when (i) {
+                                    1 -> onPreviousStep()
+                                    2 -> onNextStep()
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                containerColor = Tekhelet,
+                                contentColor = White
+                            ),
+                            content = {
+                                Text(
+                                    text = when (i) {
+                                        1 -> if (currentStep > 0) "Atrás" else "Regresar"
+                                        2 -> if (currentStep < totalSteps - 1) "Siguiente" else "Finalizar"
+                                        else -> "TODO"
+                                    },
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
