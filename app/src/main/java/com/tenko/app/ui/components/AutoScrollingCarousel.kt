@@ -3,6 +3,7 @@ package com.tenko.app.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -44,12 +45,13 @@ fun AutoScrollingCarousel(scrollDelay: Long = 2000L) {
     }
 
     LazyRow(
+        modifier = Modifier.padding(vertical = 24.dp),
         state = listState,
         userScrollEnabled = false,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 34.dp)
     ) {
-        items( count = Int.MAX_VALUE ) { index ->
+        items(count = Int.MAX_VALUE) { index ->
             val image = carouselImages[index % carouselImages.size]
 
             Image(
