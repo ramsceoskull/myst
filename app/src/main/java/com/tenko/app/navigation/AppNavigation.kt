@@ -109,6 +109,23 @@ fun AppNavigation(tokenManager: TokenManager) {
             composable(AppScreens.DoctorsScreen.route) { DoctorsScreen(navController) }
             composable("add_test") { AddMedicineScreen(medicineSearchViewModel) }
             composable(AppScreens.AddMedicationScreen.route) { AddMedicationScreen(navController) }
+            composable(
+                route = AppScreens.AddAppointmentScreen.route,
+                arguments = listOf(
+                    navArgument("doctorId") {
+                        type = NavType.IntType
+                        defaultValue = -1
+                    }
+                )
+            ) { backStackEntry ->
+                doctorViewModel.fetchContacts() // Aseguramos que la lista de contactos esté actualizada
+                val doctorId = backStackEntry.arguments?.getInt("doctorId")
+                val doctor = doctorViewModel.contacts.find { it.id_contact == doctorId }
+
+                doctor?.let {
+                    AddAppointmentScreen(navController, it)
+                }
+            }
             composable(AppScreens.MainScreen.route) {
                 MainScreen(
                     navController,
