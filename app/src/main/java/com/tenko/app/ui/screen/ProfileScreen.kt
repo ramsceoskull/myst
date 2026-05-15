@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -95,7 +96,9 @@ fun ProfileScreen(
                 fontSize = 32.sp,
                 color = Tekhelet,
                 fontWeight = FontWeight.SemiBold,
-                fontFamily = StarsLove
+                fontFamily = StarsLove,
+                lineHeight = 45.sp,
+                textAlign = TextAlign.Center
             )
 
             Row(
@@ -135,10 +138,11 @@ fun ProfileScreen(
                 title = "Historial clínico",
                 onClick = { navController.navigate(AppScreens.ClinicalHistoryScreen.route) }
             )
-            /*ActionCard(
-                icon = R.drawable.circle_question_solid_full,
-                title = "Ayuda"
-            )*/
+            ActionCard(
+                icon = R.drawable.stethoscope_solid_full,
+                title = "Estudios de laboratorio",
+                onClick = { navController.navigate(AppScreens.LaboratoryStudiesScreen.route) }
+            )
             ActionCard(
                 icon = R.drawable.gear_solid_full,
                 title = "Editar Perfil",
