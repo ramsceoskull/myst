@@ -1,8 +1,10 @@
 package com.tenko.app.data.view
 
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.tenko.app.data.api.ApiClient
 import com.tenko.app.data.model.ClinicalQuestion
 import com.tenko.app.data.model.clinicalHistoryQuestions
@@ -49,7 +51,7 @@ class ChatViewModel : ViewModel() {
 
     init {
         // Mensaje de bienvenida inicial
-        addAssistantMessage("¡Hola! Soy tu asistente. 🌸 ¿Qué te gustaría hacer hoy?")
+        addAssistantMessage("¡Hola! Soy Tenko, tu asistente de salud. 🌸\n¿Qué te gustaría hacer hoy?")
         addAssistantMessage("Puedes contarme sobre tu día (síntomas, periodo) o podemos actualizar tu Historial Clínico.")
     }
 
@@ -167,7 +169,7 @@ class ChatViewModel : ViewModel() {
     }
 
     // Nueva función de guardado que acepta el objeto directo desde la UI
-    fun updateSingleField(fieldName: String, newValue: Any?) {
+    fun updateSingleField(fieldName: String, newValue: Any?, navController: NavController) {
         viewModelScope.launch {
             try {
                 // 1. Creamos un objeto Update vacío
@@ -227,10 +229,22 @@ class ChatViewModel : ViewModel() {
                         // Actualizamos el estado local para que la UI se refresque instantáneamente
                         val updatedHistory = response.body<ClinicalHistoryResponse>()
                         syncLocalState(updatedHistory)
+                        fetchMyHistory()
+                        Toast.makeText(
+                            navController.context,
+                            "Campo actualizado correctamente",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        delay(2000) // Pequeña pausa para que el usuario vea el cambio reflejado
                     }
                 }
             } catch (e: Exception) {
                 println("Error al actualizar campo: ${e.localizedMessage}")
+                Toast.makeText(
+                    navController.context,
+                    "Error al guardar el cambio. Intenta de nuevo.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
