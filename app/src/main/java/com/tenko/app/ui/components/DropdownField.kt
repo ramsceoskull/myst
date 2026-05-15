@@ -2,10 +2,13 @@ package com.tenko.app.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -37,6 +41,10 @@ import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.RaisinBlack
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.White
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.text.Normalizer
 import kotlin.text.contains
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,7 +64,7 @@ fun DropdownField(
     ) {
         OutlinedTextField(
             value = selected,
-            onValueChange = {  },
+            onValueChange = { },
             readOnly = true,
             trailingIcon = {
                 Icon(
@@ -76,7 +84,9 @@ fun DropdownField(
                 unfocusedTextColor = White
             ),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.menuAnchor().fillMaxWidth()
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
         )
 
         ExposedDropdownMenu(
@@ -109,23 +119,28 @@ fun DropdownField(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpecialityDropdown(
+    scope: CoroutineScope,
     selected: String,
     onSelected: (Speciality) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
     var expanded by remember { mutableStateOf(false) }
-    val options = Speciality.entries.toTypedArray()
+    val options = Speciality.entries.sortedBy {
+        Normalizer.normalize(it.displayName, Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+            .lowercase()
+    }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = modifier
     ) {
         OutlinedTextField(
             value = selected,
-            onValueChange = {  },
+            onValueChange = { },
             readOnly = true,
-            placeholder = { Text("Selecciona especialidad") },
+            placeholder = { Text("Selecciona especialidad", fontSize = 14.sp) },
             trailingIcon = {
                 Icon(
                     painter = painterResource(R.drawable.chevron_down_solid_full),
@@ -144,8 +159,21 @@ fun SpecialityDropdown(
                 unfocusedTextColor = SweetGrey,
                 unfocusedPlaceholderColor = SweetGrey
             ),
+            singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.menuAnchor().fillMaxWidth()
+            modifier = modifier
+                .menuAnchor()
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 66.dp)
+                .bringIntoViewRequester(bringIntoViewRequester)
+                .onFocusEvent { state ->
+                    if (state.isFocused) {
+                        scope.launch {
+                            delay(250)
+                            bringIntoViewRequester.bringIntoView()
+                        }
+                    }
+                },
         )
 
         ExposedDropdownMenu(
@@ -192,7 +220,7 @@ fun CountryDropdown(
     Box {
         OutlinedButton(
             onClick = { expanded = true },
-            modifier = Modifier.fillMaxHeight(),
+            modifier = Modifier.defaultMinSize(minHeight = 66.dp),
             enabled = false,
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.outlinedButtonColors(
