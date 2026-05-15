@@ -34,6 +34,7 @@ fun DatePickerField(
     onClick: () -> Unit
 ) {
     Row(
+        modifier = Modifier.clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -42,8 +43,7 @@ fun DatePickerField(
             onValueChange = {},
             modifier = Modifier
                 .weight(1f)
-                .defaultMinSize(minHeight = 66.dp)
-                .clickable(onClick = onClick),
+                .defaultMinSize(minHeight = 66.dp),
             enabled = false,
             placeholder = { Text(label) },
             trailingIcon = {
@@ -60,21 +60,22 @@ fun DatePickerField(
         )
 
         IconButton(
-            onClick = onClick,
+            onClick = { },
             modifier = Modifier.size(66.dp),
             colors = IconButtonDefaults.iconButtonColors(
                 containerColor = PompAndPower,
                 contentColor = White
             ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.calendar_days_regular_full),
-                contentDescription = "Calendar icon",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(15.dp)
-            )
-        }
+            shape = RoundedCornerShape(12.dp),
+            content = {
+                Icon(
+                    painter = painterResource(R.drawable.calendar_days_regular_full),
+                    contentDescription = "Calendar icon",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(15.dp)
+                )
+            }
+        )
     }
 }
