@@ -84,11 +84,19 @@ fun ScheduleCard(reminder: ReminderResponse, onDelete: (ReminderResponse) -> Uni
                     .fillMaxWidth()
                     .height(IntrinsicSize.Min)
                     .clickable {
-                        Toast.makeText(
-                            context,
-                            "Motivo de consulta:\n${reminder.description}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        if (reminder.description!!.isNotEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Notas para tu cita:\n${reminder.description}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "No hay notas adicionales para esta cita",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
             ) {
                 Row(
