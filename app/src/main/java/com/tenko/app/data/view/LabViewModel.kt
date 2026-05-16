@@ -46,7 +46,7 @@ class LabViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             executeWithRetry {
-                val response = ApiClient.client.post(baseUrl) {
+                val response = ApiClient.client.post("$baseUrl/") {
                     contentType(ContentType.Application.Json)
                     setBody(studyData)
                 }
@@ -116,6 +116,51 @@ class LabViewModel : ViewModel() {
         }
     }
 
+    fun updateResultFromStudy(
+        idStudy: Int,
+        idResult: Int,
+        resultData: LabResultUpdate,
+        context: Context,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            isLoading = true
+            executeWithRetry {
+                val response = ApiClient.client.patch("$baseUrl/me/$idStudy/results/$idResult") {
+                    contentType(ContentType.Application.Json)
+                    setBody(resultData)
+                }
+                if (response.status.isSuccess()) {
+                    Toast.makeText(
+                        context,
+                        "Resultado actualizado correctamente",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    fetchMyStudies() // Refrescamos la lista general para ver los cambios
+                    onSuccess()
+                    true
+                } else {
+                    false
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    fun deleteResultFromStudy(idStudy: Int, idResult: Int, context: Context) {
+        viewModelScope.launch {
+            executeWithRetry {
+                val response = ApiClient.client.delete("$baseUrl/me/$idStudy/results/$idResult")
+                if (response.status.isSuccess()) {
+                    Toast.makeText(context, "Resultado eliminado", Toast.LENGTH_SHORT).show()
+                    fetchMyStudies() // Refrescamos la UI automáticamente al borrarlo
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
     // --- LÓGICA DE ROBUSTEZ (RETRY) ---
 
     private suspend fun executeWithRetry(action: suspend () -> Boolean) {
