@@ -5,6 +5,7 @@ sealed class AppScreens(val route: String) {
     object PrivacyPolicyScreen : AppScreens("privacy_policy_screen")
     object MainScreen : AppScreens("main_screen")
     object AddMedicationScreen : AppScreens("add_medication_screen")
+    object AddLaboratoryStudyScreen : AppScreens("add_laboratory_study_screen")
     object AddAppointmentScreen : AppScreens("add_appointment_screen/{doctorId}") {
         fun createRoute(doctorId: Int) = "add_appointment_screen/$doctorId"
     }
