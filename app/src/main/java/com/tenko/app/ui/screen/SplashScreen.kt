@@ -25,14 +25,9 @@ fun SplashScreen() {
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            modifier = Modifier.fillMaxSize(),
             painter = painterResource(id = R.drawable.splash),
             contentDescription = "Logo Myst"
         )
-    }
-
-    LaunchedEffect(true) {
-        delay(2000L) // Simulate loading time (e.g., fetching data, initializing resources)
     }
 }
 
