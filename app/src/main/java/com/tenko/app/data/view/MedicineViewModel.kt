@@ -22,7 +22,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,9 +29,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class MedicineViewModel : ViewModel() {
     // --- ESTADO DE DATOS (API) ---
@@ -107,7 +103,6 @@ class MedicineViewModel : ViewModel() {
                     ).show()
                     fetchMedicationReminders() // Refrescar lista
                     navController.popBackStack()
-                    delay(2000)
                     isSaved = false
                 }
             } catch (e: Exception) {
