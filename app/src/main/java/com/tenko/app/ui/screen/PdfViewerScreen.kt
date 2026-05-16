@@ -1,7 +1,6 @@
 package com.tenko.app.ui.screen
 
-import android.annotation.SuppressLint
-import android.webkit.WebView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,119 +8,122 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.github.barteksc.pdfviewer.PDFView
+import com.tenko.app.R
+import com.tenko.app.ui.theme.AntiFlashWhite
+import com.tenko.app.ui.theme.RaisinBlack
 
-@SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfViewerScreen(
-    pdfUrl: String,
-//    pdfResId: Int,
+    pdfResId: Int,
     onAccept: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var accepted by remember { mutableStateOf(false) }
-    var hasScrolledToEnd by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
-    val scrollPosition = scrollState.value
-    val contentHeight = 1000 // Ajusta a la altura de tu contenido
+    val context = LocalContext.current
+    var accepted by rememberSaveable { mutableStateOf(false) }
+    var reachedEnd by rememberSaveable { mutableStateOf(false) }
 
-    /*val context = LocalContext.current
-
-    val pdfFile = remember {
-        val file = File(context.cacheDir, "terms.pdf")
-        if (!file.exists()) {
-            context.resources.openRawResource(pdfResId).use { input ->
-                file.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-        }
-        file
-    }*/
-
-    /*ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        modifier = Modifier.fillMaxHeight()
-    ) {
+    Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        painter = painterResource(R.drawable.xmark_solid_full),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = RaisinBlack
+                    )
+                }
 
-            // 📄 VISOR PDF PRO
+                Text(
+                    text = "Términos y condiciones",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
             AndroidView(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp),
+                    .fillMaxWidth()
+                    .weight(1f),
                 factory = { ctx ->
-                    PDFView(ctx).apply {
-                        fromFile(pdfFile)
+                    PDFView(ctx, null).apply {
+                        fromStream(context.resources.openRawResource(pdfResId))
                             .enableSwipe(true)
                             .swipeHorizontal(false)
+                            .pageSnap(true)
+                            .pageFling(true)
+                            .autoSpacing(true)
+                            .spacing(12)
+                            .enableAntialiasing(true)
                             .enableDoubletap(true)
-                            .onPageChange { page, pageCount ->
-                                if (page == pageCount - 1) {
-                                    hasScrolledToEnd = true
-                                }
+                            .defaultPage(0)
+                            .onPageChange { page, totalPages ->
+                                reachedEnd =
+                                    page == totalPages - 1
                             }
                             .load()
                     }
                 }
-                *//*factory = { ctx ->
-                    com.github.barteksc.pdfviewer.PDFView(ctx, null).apply {
-                        fromFile(pdfFile)
-                            .enableSwipe(true)
-                            .swipeHorizontal(false)
-                            .enableDoubletap(true)
-                            .onPageChange { page, pageCount ->
-                                if (page == pageCount - 1) {
-                                    hasScrolledToEnd = true
-                                }
-                            }
-                            .load()
-                    }
-                }*//*
             )
 
-            // 🔽 CONTROLES FIJOS
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(White)
+                    .background(AntiFlashWhite)
                     .padding(16.dp)
             ) {
+                Text(
+                    text =
+                        if (reachedEnd) "Ya puedes aceptar los términos."
+                        else "Debes leer el documento completo.",
+                    color =
+                        if (reachedEnd) Color.Black
+                        else Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = accepted,
-                        onCheckedChange = {
-                            if (hasScrolledToEnd) accepted = it
-                        },
-                        enabled = hasScrolledToEnd
+                        onCheckedChange = { accepted = it },
+                        enabled = reachedEnd
                     )
 
-                    Text(
-                        if (hasScrolledToEnd)
-                            "Acepto los términos y condiciones"
-                        else
-                            "Debes leer todo el documento para aceptar",
-                        color = if (hasScrolledToEnd) Color.Black else Color.Gray
-                    )
+                    Text(text = "Acepto los términos y condiciones")
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = onAccept,
@@ -139,77 +141,5 @@ fun PdfViewerScreen(
                 }
             }
         }
-    }*/
-
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        // 🔥 VISOR PDF
-        AndroidView(
-            modifier = Modifier.weight(1f),
-            factory = { context ->
-                WebView(context).apply {
-                    settings.javaScriptEnabled = true
-                    loadUrl("https://drive.google.com/file/d/1ldgW0gvh45ZUmDggg7RZR_frIdMENyOx/view")
-//                    loadUrl("file:///android_res/raw/terms")
-//                    loadUrl(pdfUrl)
-//                    loadUrl("https://docs.google.com/gview?embedded=true&url=$pdfUrl")
-                }
-            }
-        )
-
-        // 🔽 CONTROLES
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = accepted,
-                    onCheckedChange = { accepted = it }
-                )
-                Text("Acepto los términos y condiciones")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = onAccept,
-                enabled = accepted && scrollPosition >= (contentHeight - 100), // Ajusta el umbral, // 🔒 BLOQUEADO SI NO ACEPTA
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Continuar")
-            }
-
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancelar")
-            }
-        }
     }
 }
-
-/*
-@Composable
-fun TérminosYCondicionesScreen(onAceptar: () -> Unit) {
-    var scrollState = rememberScrollState()
-    val scrollPosition = scrollState.value
-    val contentHeight = 1000 // Ajusta a la altura de tu contenido
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Muestra el PDF aquí
-        AndroidView(factory = { context ->
-            PDFView(context).apply {
-                fromAsset("terminos_y_condiciones.pdf") // Cambia por tu ruta
-                load()
-            }
-        }, modifier = Modifier.weight(1f))
-
-        // Botón Aceptar, habilitado solo si scrollea hasta el final
-        Button(
-            onClick = onAceptar,
-            enabled = scrollPosition >= (contentHeight - 100) // Ajusta el umbral
-        ) {
-            Text("Aceptar Términos y Condiciones")
-        }
-    }
-}*/
