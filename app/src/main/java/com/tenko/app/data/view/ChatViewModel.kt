@@ -144,6 +144,7 @@ class ChatViewModel : ViewModel() {
             _currentQuestion.value = question
             addAssistantMessage(question.label, question)
         } else {
+            isQuestionnaireMode = false
             _currentQuestion.value = null
             addAssistantMessage("¡Hemos terminado! Dame un momento para guardar todo...")
             // Aquí llamarías a la función de guardado final
@@ -152,6 +153,10 @@ class ChatViewModel : ViewModel() {
     }
 
     private fun handleQuestionnaireResponse(text: String) {
+        if (currentQuestionIndex >= clinicalHistoryQuestions.size) {
+            isQuestionnaireMode = false
+            return
+        }
         val currentQuestion = clinicalHistoryQuestions[currentQuestionIndex]
 
         // Normalización básica para campos booleanos
