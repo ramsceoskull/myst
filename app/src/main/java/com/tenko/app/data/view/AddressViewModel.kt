@@ -1,13 +1,24 @@
 package com.tenko.app.data.view
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tenko.app.data.api.ApiClient
-import com.tenko.app.data.serializable.*
+import com.tenko.app.data.serializable.AddressCreate
+import com.tenko.app.data.serializable.AddressResponse
+import com.tenko.app.data.serializable.AddressUpdate
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.patch
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
