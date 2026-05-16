@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +52,14 @@ import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.BottomNavigationBar
 import com.tenko.app.ui.components.CalendarLegendSection
 import com.tenko.app.ui.components.FloatingActionButton
+import com.tenko.app.ui.components.FloatingLegendSection
+import com.tenko.app.ui.components.MotivationalQuoteCard
+import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.ui.theme.SweetGrey
+import com.tenko.app.ui.theme.Tekhelet
+import com.tenko.app.ui.theme.White
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -60,22 +72,22 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
         CalendarLegend(
             id = "real_bleeding",
             label = "Sangrado registrado",
-            color = Color(0xFFFF6FAE)
+            color = Color(0xFFFF6FAE),
         ),
         CalendarLegend(
             id = "past_ovulation",
             label = "Ovulación registrada",
-            color = Color(0xFF81D4FA)
+            color = Color(0xFF81D4FA),
         ),
         CalendarLegend(
             id = "future_ovulation",
             label = "Ovulación estimada",
-            color = Color(0xFF81D4FA).copy(alpha = 0.5f)
+            color = Color(0xFF81D4FA).copy(alpha = 0.5f),
         ),
         CalendarLegend(
             id = "future_bleeding",
             label = "Periodo estimado",
-            color = Color(0xFFFF6FAE).copy(alpha = 0.5f)
+            color = Color(0xFFFF6FAE).copy(alpha = 0.5f),
         )
     )
 
@@ -84,6 +96,9 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
     var selectedDate by remember { mutableStateOf(today) }
     var showSheet by remember { mutableStateOf(false) }
     var selectedLegend by remember { mutableStateOf<String?>(null) }
+    var showLegend by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     val selectedDateLog = viewModel.dailyLogs.find { it.date == selectedDate }
 
@@ -106,8 +121,17 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
             FloatingActionButton(R.drawable.note_sticky_solid_full) { showSheet = true }
         },
         bottomBar = { BottomNavigationBar(navController) }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(modifier = Modifier.height(30.dp))
+
+            MotivationalQuoteCard()
+
             CalendarHeader(state)
 
             HorizontalCalendar(
@@ -202,15 +226,30 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
                 }
             )
 
-            CalendarLegendSection(
+            FloatingLegendSection(
                 legends = legends,
                 selectedLegend = selectedLegend,
+                showLegend = showLegend,
+                onToggleLegend = {
+                    showLegend = !showLegend
+                    scope.launch {
+                        if (showLegend) {
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                        } else {
+                            scrollState.animateScrollTo(0)
+                        }
+                    }
+                },
                 onLegendSelected = { legendId ->
                     selectedLegend =
-                        if (selectedLegend == legendId) null
-                        else legendId
+                        if (selectedLegend == legendId)
+                            null
+                        else
+                            legendId
                 }
             )
+
+            Spacer(modifier = Modifier.height(30.dp))
         }
 
         if (showSheet) {
@@ -251,18 +290,18 @@ fun DayCell(
             modifier = Modifier
                 .size(40.dp)
                 .background(
-                    if (selected) Color(0xFF7B61FF) else statusColor,
+                    if (selected) Tekhelet else statusColor,
                     CircleShape
                 )
                 .then(
                     // Opcional: Borde para el día de hoy
-                    if (day == today) Modifier.border(1.dp, Color.Gray, CircleShape) else Modifier
+                    if (day == today) Modifier.border(1.dp, Tekhelet, CircleShape) else Modifier
                 ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 day.dayOfMonth.toString(),
-                color = if (selected) Color.White else Color.Black,
+                color = if (selected) White else RaisinBlack,
                 fontWeight = if (statusColor != Color.Transparent || day == today) FontWeight.Bold else FontWeight.Medium
             )
         }
@@ -272,7 +311,7 @@ fun DayCell(
                 Modifier
                     .padding(top = 2.dp)
                     .size(6.dp)
-                    .background(Color(0xFFFF6FAE), CircleShape)
+                    .background(Color.Gray, CircleShape)
             )
         }
     }
