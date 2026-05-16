@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -17,14 +16,12 @@ import com.tenko.app.R
 import com.tenko.app.data.api.TokenManager
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.DoctorViewModel
-import com.tenko.app.data.view.MedicineSearchViewModel
-import com.tenko.app.data.view.NotificationViewModel
-import com.tenko.app.ui.components.NotificationsOverlay
+import com.tenko.app.ui.components.LaboratoryResultScreen
 import com.tenko.app.ui.screen.AddAppointmentScreen
 import com.tenko.app.ui.screen.AddDoctorScreen
+import com.tenko.app.ui.screen.AddLaboratoryStudyScreen
 import com.tenko.app.ui.screen.AddMedicationScreen
 import com.tenko.app.ui.screen.AddMedicineScreen
-import com.tenko.app.ui.screen.AllNotificationsScreen
 import com.tenko.app.ui.screen.CalendarScreen
 import com.tenko.app.ui.screen.ChatScreen
 import com.tenko.app.ui.screen.ClinicalHistoryScreen
@@ -34,7 +31,6 @@ import com.tenko.app.ui.screen.EmailSentScreen
 import com.tenko.app.ui.screen.LaboratoryStudiesScreen
 import com.tenko.app.ui.screen.LoginScreen
 import com.tenko.app.ui.screen.MainScreen
-import com.tenko.app.ui.screen.NotificationDetailScreen
 import com.tenko.app.ui.screen.PdfViewerScreen
 import com.tenko.app.ui.screen.ProfileScreen
 import com.tenko.app.ui.screen.ReportsScreen
@@ -47,8 +43,6 @@ fun AppNavigation(tokenManager: TokenManager) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
     val doctorViewModel: DoctorViewModel = viewModel()
-    val notificationViewModel = viewModel<NotificationViewModel>()
-    val medicineSearchViewModel = viewModel<MedicineSearchViewModel>()
 
     val context = LocalContext.current
 
@@ -87,7 +81,6 @@ fun AppNavigation(tokenManager: TokenManager) {
                     authViewModel
                 )
             }
-//            composable(AppScreens.ClinicalHistoryScreen.route) { ClinicalHistoryScreen(navController, authViewModel) }
             composable(AppScreens.ClinicalHistoryScreen.route) {
                 ClinicalHistoryScreen(
                     navController,
@@ -96,6 +89,10 @@ fun AppNavigation(tokenManager: TokenManager) {
             }
             composable(AppScreens.LaboratoryStudiesScreen.route) {
                 LaboratoryStudiesScreen(navController)
+            }
+            composable(AppScreens.AddLaboratoryStudyScreen.route) {
+//                AddLaboratoryStudyScreen()
+                LaboratoryResultScreen(navController)
             }
             composable(AppScreens.UpdateProfileScreen.route) {
                 UpdateProfileScreen(
@@ -107,7 +104,7 @@ fun AppNavigation(tokenManager: TokenManager) {
             composable(AppScreens.ChatScreen.route) { ChatScreen(navController) }
             composable(AppScreens.CalendarScreen.route) { CalendarScreen(navController) }
             composable(AppScreens.DoctorsScreen.route) { DoctorsScreen(navController) }
-            composable("add_test") { AddMedicineScreen(medicineSearchViewModel) }
+            composable("add_test") { AddMedicineScreen() }
             composable(AppScreens.AddMedicationScreen.route) { AddMedicationScreen(navController) }
             composable(
                 route = AppScreens.AddAppointmentScreen.route,
@@ -130,67 +127,10 @@ fun AppNavigation(tokenManager: TokenManager) {
                 MainScreen(
                     navController,
                     authViewModel,
-                    notificationViewModel,
                 )
             }
-            composable(AppScreens.TermsScreen.route) {
-                PdfViewerScreen(
-                    pdfResId = R.raw.terminos,
-                    onAccept = {
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("termsAccepted", true)
-
-                        navController.popBackStack()
-                    },
-                    onDismiss = { navController.popBackStack() }
-                )
-            }
-            composable(AppScreens.PrivacyPolicyScreen.route) {
-                PdfViewerScreen(
-                    pdfResId = R.raw.politicas,
-                    onAccept = {
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("privacyAccepted", true)
-
-                        navController.popBackStack()
-                    },
-                    onDismiss = { navController.popBackStack() }
-                )
-            }
-            composable(AppScreens.NotificationsOverlay.route) {
-                NotificationsOverlay(
-                    viewModel = notificationViewModel,
-                    onDismiss = { mutableStateOf(false) },
-                    onSeeAllClick = { navController.navigate(AppScreens.AllNotificationsScreen.route) },
-                    onNotificationClick = {
-                        navController.navigate("${AppScreens.NotificationDetailsScreen.route}/${it.id}")
-                    }
-                )
-            }
-            composable(AppScreens.AllNotificationsScreen.route) {
-                AllNotificationsScreen(
-                    viewModel = notificationViewModel,
-                    onBack = { navController.popBackStack() },
-                    onNotificationClick = {
-                        navController.navigate("${AppScreens.NotificationDetailsScreen.route}/${it.id}")
-                    }
-                )
-            }
-            composable(
-                route = AppScreens.NotificationDetailsScreen.route,
-                arguments = listOf(
-                    navArgument("notificationId") {
-                        type = NavType.IntType
-                    }
-                )
-            ) { backStackEntry ->
-                val notificationId = backStackEntry.arguments?.getInt("notificationId")
-                val notification =
-                    notificationViewModel.notifications.first { it.id == notificationId }
-                NotificationDetailScreen(notification)
-            }
+            composable(AppScreens.TermsScreen.route) { PdfViewerScreen(pdfResId = R.raw.terminos) }
+            composable(AppScreens.PrivacyPolicyScreen.route) { PdfViewerScreen(pdfResId = R.raw.politicas) }
             composable(
                 route = AppScreens.ForgotPasswordScreen.route,
                 arguments = listOf(
