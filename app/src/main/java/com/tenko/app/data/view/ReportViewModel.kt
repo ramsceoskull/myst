@@ -73,6 +73,7 @@ class ReportViewModel : ViewModel() {
      */
     fun fetchSavedReports(userId: String) {
         viewModelScope.launch {
+            isLoading = true
             executeWithRetry {
                 try {
                     val storageRef = Firebase.storage.reference.child("reports/$userId")
@@ -93,12 +94,38 @@ class ReportViewModel : ViewModel() {
                     true
                 }
             }
+            isLoading = false
         }
     }
 
     private suspend fun uploadPdfToFirebase(bytes: ByteArray, fileName: String, userId: String) {
         val storageRef = Firebase.storage.reference.child("reports/$userId/$fileName")
         storageRef.putBytes(bytes).await()
+    }
+
+    fun deleteReport(userId: String, fileName: String) {
+        viewModelScope.launch {
+            isLoading = true
+            reportError = null
+
+            executeWithRetry {
+                try {
+                    // 1. Apuntar a la referencia exacta del archivo
+                    val storageRef = Firebase.storage.reference.child("reports/$userId/$fileName")
+
+                    // 2. Ejecutar la tarea de borrado de forma asíncrona
+                    storageRef.delete().await()
+
+                    // 3. Refrescar la lista local para que desaparezca de la UI de inmediato
+                    fetchSavedReports(userId)
+                    true
+                } catch (e: Exception) {
+                    // Si ocurre un error, executeWithRetry se encargará de reintentar o guardar el error
+                    false
+                }
+            }
+            isLoading = false
+        }
     }
 
     /**
