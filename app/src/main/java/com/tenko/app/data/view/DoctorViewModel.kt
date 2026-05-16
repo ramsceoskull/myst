@@ -49,6 +49,7 @@ class DoctorViewModel : ViewModel() {
 
     fun fetchContacts() {
         viewModelScope.launch {
+            isLoading = true
             executeWithRetry {
                 val response = ApiClient.client.get("https://api-myst.onrender.com/contacts/me")
                 if (response.status == HttpStatusCode.OK) {
@@ -57,6 +58,7 @@ class DoctorViewModel : ViewModel() {
                     true
                 } else false
             }
+            isLoading = false
         }
     }
 
@@ -121,6 +123,7 @@ class DoctorViewModel : ViewModel() {
 
     fun deleteContact(idContact: Int, navController: NavController) {
         viewModelScope.launch {
+            isLoading = true
             executeWithRetry {
                 val response =
                     ApiClient.client.delete("https://api-myst.onrender.com/contacts/me/$idContact")
@@ -141,11 +144,13 @@ class DoctorViewModel : ViewModel() {
                     false
                 }
             }
+            isLoading = false
         }
     }
 
     fun fetchReminders() {
         viewModelScope.launch {
+            isLoading = true
             executeWithRetry {
                 val response = ApiClient.client.get("https://api-myst.onrender.com/reminders/me")
                 if (response.status == HttpStatusCode.OK) {
@@ -153,11 +158,13 @@ class DoctorViewModel : ViewModel() {
                     true
                 } else false
             }
+            isLoading = false
         }
     }
 
     fun fetchContactReminders(idContact: Int) {
         viewModelScope.launch {
+            isLoading = true
             executeWithRetry {
                 val response =
                     ApiClient.client.get("https://api-myst.onrender.com/reminders/contact/${idContact}")
@@ -166,6 +173,7 @@ class DoctorViewModel : ViewModel() {
                     true
                 } else false
             }
+            isLoading = false
         }
     }
 
@@ -209,6 +217,7 @@ class DoctorViewModel : ViewModel() {
 
     fun deleteContactReminder(idReminder: Int, idContact: Int, navController: NavController) {
         viewModelScope.launch {
+            isLoading = true
             executeWithRetry {
                 val response =
                     ApiClient.client.delete("https://api-myst.onrender.com/reminders/me/$idReminder")
@@ -229,6 +238,7 @@ class DoctorViewModel : ViewModel() {
                     false
                 }
             }
+            isLoading = false
         }
     }
 
