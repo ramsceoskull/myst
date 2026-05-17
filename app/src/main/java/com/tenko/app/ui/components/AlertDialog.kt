@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
+import com.tenko.app.data.model.DialogButton
+import com.tenko.app.data.model.DialogTitle
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
@@ -23,24 +25,23 @@ import com.tenko.app.ui.theme.White
 @Composable
 fun AlertDialog(
     onDismissRequest: () -> Unit,
-    title: Pair<Int, String>
-    = Pair(R.drawable.bluesky_brands_solid_full, "Título del diálogo"),
-    confirmButton: Pair<String, () -> Unit>,
-    text: @Composable () -> Unit,
+    title: DialogTitle = DialogTitle(R.drawable.bluesky_brands_solid_full, "Título del diálogo"),
+    confirmButton: DialogButton = DialogButton("Confirmar", onDismissRequest),
+    content: @Composable () -> Unit,
     dismissButtonText: String = "Cancelar"
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(
-                onClick = confirmButton.second,
+                onClick = confirmButton.onClick,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = White,
                     containerColor = Tekhelet
                 ),
                 content = {
-                    Text(confirmButton.first)
+                    Text(confirmButton.text)
                 }
             )
         },
@@ -61,17 +62,17 @@ fun AlertDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    painter = painterResource(title.first),
+                    painter = painterResource(title.icon),
                     contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )
 
-                Text(title.second)
+                Text(title.text)
             }
         },
         text = {
             Column() {
-                text()
+                content()
             }
         },
         shape = RoundedCornerShape(12.dp),
