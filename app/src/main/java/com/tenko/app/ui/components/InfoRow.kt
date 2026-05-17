@@ -18,13 +18,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
+import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.RaisinBlack
 
 @Composable
 fun InfoRow(
     label: String,
     value: String,
-    onClick: (() -> Unit)? = null
+    showInput: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
+    onDone: (() -> Unit)? = null,
+    input: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -59,14 +64,22 @@ fun InfoRow(
                     .padding(start = 8.dp),
                 tint = Color.Gray
             )
-        } else {
+        } else
             Spacer(modifier = Modifier.size(30.dp))
-        }
     }
 
+    if (input != null)
+        AnimatedEditableInput(
+            visible = showInput,
+            onCancel = onCancel ?: {},
+            onDone = onDone ?: {},
+            label = label,
+            input = input
+        )
+
     HorizontalDivider(
-        color = Color(0xFFE0E0E0),
-        thickness = (0.7).dp
+        color = AntiFlashWhite,
+        thickness = 1.dp
     )
 }
 
