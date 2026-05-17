@@ -126,7 +126,8 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
         topBar = {
             AppTopBar(
                 title = "Calendario",
-                onBackClick = { navController.popBackStack() })
+                onBackClick = { navController.popBackStack() }
+            ) {}
         },
         floatingActionButton = {
             FloatingActionButton(R.drawable.note_sticky_solid_full) { showSheet = true }
@@ -332,52 +333,93 @@ fun DayCell(
 @Composable
 fun DailyLogFormSheet(
     date: LocalDate,
-    existingLog: DailyLogResponse?, // Reemplazar campos mapeados desde base de datos si existen
+    existingLog: DailyLogResponse?,
     onDismiss: () -> Unit,
     onSave: (DailyLogCreate) -> Unit
 ) {
     // 1. ESTADOS - CAMPOS DE SELECCIÓN (Chips Enums / Booleans)
-    var flow by remember { mutableStateOf(existingLog?.menstrual_flow) }
-    var discharge by remember { mutableStateOf(existingLog?.vaginal_discharge) }
-    var mood by remember { mutableStateOf(existingLog?.mood) }
-    var anxiety by remember { mutableStateOf(existingLog?.anxiety) }
-    var stress by remember { mutableStateOf(existingLog?.stress) }
-    var cramps by remember { mutableStateOf(existingLog?.cramps) }
-    var cravings by remember { mutableStateOf(existingLog?.cravings) }
-    var pregTest by remember { mutableStateOf(existingLog?.pregnancy_test) }
-    var ovulTest by remember { mutableStateOf(existingLog?.ovulation_test) }
+    var flow by remember { mutableStateOf<Int?>(null) }
+    var discharge by remember { mutableStateOf<Int?>(null) }
+    var mood by remember { mutableStateOf<Int?>(null) }
+    var anxiety by remember { mutableStateOf<Int?>(null) }
+    var stress by remember { mutableStateOf<Int?>(null) }
+    var cramps by remember { mutableStateOf<Int?>(null) }
+    var cravings by remember { mutableStateOf<Int?>(null) }
+    var pregTest by remember { mutableStateOf<Int?>(null) }
+    var ovulTest by remember { mutableStateOf<Int?>(null) }
 
-    // Estados Booleanos directos
-    var sexualPenetration by remember { mutableStateOf(existingLog?.sexual_penetration ?: false) }
-    var onFertileWindow by remember { mutableStateOf(existingLog?.on_fertile_window ?: false) }
+    var sexualPenetration by remember { mutableStateOf(false) }
+    var onFertileWindow by remember { mutableStateOf(false) }
+    var anticonceptiveType by remember { mutableStateOf("Ninguno") }
 
-    // Anticonceptivos lógica condicionada
-    var anticonceptiveType by remember {
-        mutableStateOf(
-            existingLog?.anticonceptive_type ?: "Ninguno"
-        )
+    // 2. ESTADOS - MULTISELECCIÓN (Strings)
+    var exercise by remember { mutableStateOf("") }
+    var hobbies by remember { mutableStateOf("") }
+    var symptoms by remember { mutableStateOf("") }
+
+    // 3. ESTADOS - TIEMPOS (Guardaremos el String formateado provisionalmente "HH:mm")
+    var sleepTime by remember { mutableStateOf("") }
+    var exerciseTime by remember { mutableStateOf("") }
+
+    // 4. ESTADOS - TEXTFIELDS NUMÉRICOS
+    var weight by remember { mutableStateOf("") }
+    var height by remember { mutableStateOf("") }
+    var temp by remember { mutableStateOf("") }
+    var glycemia by remember { mutableStateOf("") }
+    var water by remember { mutableStateOf("") }
+    var systolicBp by remember { mutableStateOf("") }
+    var diastolicBp by remember { mutableStateOf("") }
+    var heartRate by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
+    // CLAVE PARA ARREGLAR TU BUG: Forzar la actualización de los estados locales cuando cambia el log seleccionado
+    LaunchedEffect(existingLog, date) {
+        flow = existingLog?.menstrual_flow
+        discharge = existingLog?.vaginal_discharge
+        mood = existingLog?.mood
+        anxiety = existingLog?.anxiety
+        stress = existingLog?.stress
+        cramps = existingLog?.cramps
+        cravings = existingLog?.cravings
+        pregTest = existingLog?.pregnancy_test
+        ovulTest = existingLog?.ovulation_test
+
+        sexualPenetration = existingLog?.sexual_penetration ?: false
+        onFertileWindow = existingLog?.on_fertile_window ?: false
+        anticonceptiveType = existingLog?.anticonceptive_type ?: "Ninguno"
+
+        exercise = existingLog?.exercise ?: ""
+        hobbies = existingLog?.hobbies_activities ?: ""
+        symptoms = existingLog?.symptoms ?: ""
+
+        // Mapeo seguro de LocalTime? a "HH:mm"
+        sleepTime = existingLog?.sleep_time?.let {
+            String.format(
+                Locale.getDefault(),
+                "%02d:%02d",
+                it.hour,
+                it.minute
+            )
+        } ?: ""
+        exerciseTime = existingLog?.exercise_time?.let {
+            String.format(
+                Locale.getDefault(),
+                "%02d:%02d",
+                it.hour,
+                it.minute
+            )
+        } ?: ""
+
+        weight = existingLog?.weight?.toString() ?: ""
+        height = existingLog?.height?.toString() ?: ""
+        temp = existingLog?.body_temperature?.toString() ?: ""
+        glycemia = existingLog?.glycemia?.toString() ?: ""
+        water = existingLog?.water_consumption?.toString() ?: ""
+        systolicBp = existingLog?.systolic_bp?.toString() ?: ""
+        diastolicBp = existingLog?.diastolic_bp?.toString() ?: ""
+        heartRate = existingLog?.heart_rate?.toString() ?: ""
+        notes = existingLog?.notes ?: ""
     }
-    val anticonceptiveUse = anticonceptiveType != "Ninguno"
-
-    // 2. ESTADOS - MULTISELECCIÓN (Strings separados por comas)
-    var exercise by remember { mutableStateOf(existingLog?.exercise ?: "") }
-    var hobbies by remember { mutableStateOf(existingLog?.hobbies_activities ?: "") }
-    var symptoms by remember { mutableStateOf(existingLog?.symptoms ?: "") }
-
-    // 3. ESTADOS - TIEMPOS (HH:mm)
-    var sleepTime by remember { mutableStateOf(existingLog?.sleep_time?.toString() ?: "") }
-    var exerciseTime by remember { mutableStateOf(existingLog?.exercise_time?.toString() ?: "") }
-
-    // 4. ESTADOS - TEXTFIELDS NUMÉRICOS (Floats / Ints)
-    var weight by remember { mutableStateOf(existingLog?.weight?.toString() ?: "") }
-    var height by remember { mutableStateOf(existingLog?.height?.toString() ?: "") }
-    var temp by remember { mutableStateOf(existingLog?.body_temperature?.toString() ?: "") }
-    var glycemia by remember { mutableStateOf(existingLog?.glycemia?.toString() ?: "") }
-    var water by remember { mutableStateOf(existingLog?.water_consumption?.toString() ?: "") }
-    var systolicBp by remember { mutableStateOf(existingLog?.systolic_bp?.toString() ?: "") }
-    var diastolicBp by remember { mutableStateOf(existingLog?.diastolic_bp?.toString() ?: "") }
-    var heartRate by remember { mutableStateOf(existingLog?.heart_rate?.toString() ?: "") }
-    var notes by remember { mutableStateOf(existingLog?.notes ?: "") }
 
     // OPCIONES DE LOS ENUMS
     val flowOptions =
@@ -474,16 +516,13 @@ fun DailyLogFormSheet(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // ==========================================
-            // SECCIÓN 1: ENUMS Y OPCIONES (CHIPS DESPLEGABLES)
-            // ==========================================
+            // SECCIÓN 1: CHIPS ENUMS DESPLEGABLES
             Text(
                 "Ciclo y Síntomas",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
             )
-
             CatalogChips("Flujo Menstrual", flowOptions, flow) { flow = it }
             CatalogChips("Flujo Vaginal", dischargeOptions, discharge) { discharge = it }
             CatalogChips("Estado de Ánimo", moodOptions, mood) { mood = it }
@@ -494,9 +533,7 @@ fun DailyLogFormSheet(
             CatalogChips("Test de Embarazo", testOptions, pregTest) { pregTest = it }
             CatalogChips("Test de Ovulación", testOptions, ovulTest) { ovulTest = it }
 
-            // ==========================================
-            // SECCIÓN 2: MULTISELECCIÓN (CHIPS MÚLTIPLES)
-            // ==========================================
+            // SECCIÓN 2: MULTISELECCIÓN
             MultiSelectCatalogChips("Síntomas presentados", symptomsList, symptoms) {
                 symptoms = it
             }
@@ -505,16 +542,13 @@ fun DailyLogFormSheet(
             }
             MultiSelectCatalogChips("Hobbies y Actividades", hobbiesList, hobbies) { hobbies = it }
 
-            // ==========================================
-            // SECCIÓN 3: BOOLEANOS (BOTONES/SWITCHES RÁPIDOS)
-            // ==========================================
+            // SECCIÓN 3: BOOLEANOS Y ANTICONCEPTIVOS
             Text(
                 "Actividad y Anticoncepción",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
             )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -528,8 +562,6 @@ fun DailyLogFormSheet(
                     onClick = { onFertileWindow = !onFertileWindow },
                     label = { Text("Ventana Fértil") })
             }
-
-            // Lógica anticonceptiva dinámica: siempre se selecciona el tipo, y calcula el boolean automáticamente
             MultiSelectCatalogChips(
                 "Método Anticonceptivo",
                 anticonceptiveList,
@@ -538,9 +570,7 @@ fun DailyLogFormSheet(
                 anticonceptiveType = it.ifBlank { "Ninguno" }
             }
 
-            // ==========================================
-            // SECCIÓN 4: SELECTORES DE TIEMPO
-            // ==========================================
+            // SECCIÓN 4: TIME PICKERS
             Text(
                 "Registros de Tiempo",
                 fontSize = 14.sp,
@@ -550,16 +580,13 @@ fun DailyLogFormSheet(
             TimePickerDialogButton("Horas de Sueño", sleepTime) { sleepTime = it }
             TimePickerDialogButton("Duración del Ejercicio", exerciseTime) { exerciseTime = it }
 
-            // ==========================================
-            // SECCIÓN 5: ENTRADAS DE TEXTO / CAMPOS NUMÉRICOS
-            // ==========================================
+            // SECCIÓN 5: TEXTFIELDS
             Text(
                 "Mediciones Clínicas y Métricas",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
             )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -579,7 +606,6 @@ fun DailyLogFormSheet(
                     modifier = Modifier.weight(1f)
                 )
             }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -599,8 +625,6 @@ fun DailyLogFormSheet(
                     modifier = Modifier.weight(1f)
                 )
             }
-
-            // Presión Arterial unificada visualmente
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -609,7 +633,7 @@ fun DailyLogFormSheet(
                 OutlinedTextField(
                     value = systolicBp,
                     onValueChange = { systolicBp = it },
-                    label = { Text("Sistólica (mmHg)") },
+                    label = { Text("Sistólica") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
@@ -617,12 +641,11 @@ fun DailyLogFormSheet(
                 OutlinedTextField(
                     value = diastolicBp,
                     onValueChange = { diastolicBp = it },
-                    label = { Text("Diastólica (mmHg)") },
+                    label = { Text("Diastólica") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
             }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -630,7 +653,7 @@ fun DailyLogFormSheet(
                 OutlinedTextField(
                     value = heartRate,
                     onValueChange = { heartRate = it },
-                    label = { Text("Frecuencia Cardíaca (lpm)") },
+                    label = { Text("Pulsaciones (lpm)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
@@ -643,9 +666,7 @@ fun DailyLogFormSheet(
                 )
             }
 
-            // ==========================================
-            // SECCIÓN 6: NOTAS Y GUARDADO
-            // ==========================================
+            // SECCIÓN 6: NOTAS Y ACCIÓN
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
@@ -656,8 +677,15 @@ fun DailyLogFormSheet(
 
             Button(
                 onClick = {
-                    // Mapeo seguro de datos antes de enviar al backend
-                    // Asegúrate de extender la data class DailyLogCreate en tu proyecto con estas variables
+                    // Función auxiliar interna para parsear "HH:mm" seguro a LocalTime
+                    val parseTimeToLocalTime: (String) -> java.time.LocalTime? = { timeStr ->
+                        timeStr.split(":").takeIf { it.size == 2 }?.let { parts ->
+                            val h = parts[0].toIntOrNull()
+                            val m = parts[1].toIntOrNull()
+                            if (h != null && m != null) java.time.LocalTime.of(h, m) else null
+                        }
+                    }
+
                     onSave(
                         DailyLogCreate(
                             date = date,
@@ -672,26 +700,24 @@ fun DailyLogFormSheet(
                             ovulation_test = ovulTest,
                             sexual_penetration = sexualPenetration,
                             on_fertile_window = onFertileWindow,
-                            anticonceptive_use = anticonceptiveUse,
-                            anticonceptive_type = anticonceptiveType.ifBlank { null },
+                            anticonceptive_use = anticonceptiveType != "Ninguno",
+                            anticonceptive_type = anticonceptiveType,
                             exercise = exercise.ifBlank { null },
                             hobbies_activities = hobbies.ifBlank { null },
                             symptoms = symptoms.ifBlank { null },
-                            sleep_time = sleepTime.takeIf { it.isNotBlank() }
-                                ?.let { LocalTime.parse(it) },
-                            exercise_time = exerciseTime.takeIf { it.isNotBlank() }
-                                ?.let { LocalTime.parse(it) },
+                            sleep_time = parseTimeToLocalTime(sleepTime),
+                            exercise_time = parseTimeToLocalTime(exerciseTime),
                             weight = weight.toFloatOrNull(),
                             height = height.toFloatOrNull(),
                             body_temperature = temp.toFloatOrNull(),
                             glycemia = glycemia.toFloatOrNull(),
                             water_consumption = water.toFloatOrNull(),
                             systolic_bp = systolicBp.toIntOrNull(),
+                            diastolic_bp = diastolicBp.toIntOrNull(),
                             heart_rate = heartRate.toIntOrNull(),
                             notes = notes.ifBlank { null }
                         )
                     )
-                    onDismiss() // Cierra el modal temporalmente hasta conectar el backend
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -900,7 +926,6 @@ fun CatalogChips(
     selectedId: Int?,
     onSelected: (Int) -> Unit
 ) {
-    // Estado para controlar si la sección está expandida u oculta
     var isExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -908,63 +933,44 @@ fun CatalogChips(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        // Fila del título (actúa como el botón del dropdown)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { isExpanded = !isExpanded } // Al hacer clic, invierte el estado
+                .clickable { isExpanded = !isExpanded }
                 .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
-                // Opcional: Muestra lo que está seleccionado actualmente de forma sutil cuando está cerrado
+                Text(text = title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 if (!isExpanded && selectedId != null) {
                     Text(
                         text = options[selectedId] ?: "",
-                        color = Tekhelet, // O el color temático que prefieras
+                        color = Color(0xFFFF6FAE),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
-
-            // Flechita dinámica tipo "v" que cambia según el estado
-            val icon =
-                if (isExpanded) R.drawable.chevron_up_solid_full else R.drawable.chevron_down_solid_full
             Icon(
-                painter = painterResource(icon),
-                contentDescription = if (isExpanded) "Colapsar" else "Expandir",
-                modifier = Modifier.size(28.dp),
-                tint = Color.Gray
+                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null, tint = Color.Gray, modifier = Modifier.size(28.dp)
             )
         }
 
-        // Animación suave para aparecer/desaparecer los chips
         AnimatedVisibility(visible = isExpanded) {
-            Column {
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp, bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    options.forEach { (id, label) ->
-                        FilterChip(
-                            selected = selectedId == id,
-                            onClick = {
-                                onSelected(id)
-                                // Opcional: Descomenta la siguiente línea si quieres que se cierre automáticamente al seleccionar una opción
-                                isExpanded = false
-                            },
-                            label = { Text(label) }
-                        )
-                    }
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                options.forEach { (id, label) ->
+                    FilterChip(
+                        selected = selectedId == id,
+                        onClick = { onSelected(id) },
+                        label = { Text(label) }
+                    )
                 }
             }
         }
