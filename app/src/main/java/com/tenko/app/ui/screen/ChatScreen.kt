@@ -20,7 +20,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tenko.app.R
+import com.tenko.app.data.model.DialogButton
+import com.tenko.app.data.model.DialogTitle
 import com.tenko.app.data.view.ChatViewModel
 import com.tenko.app.navigation.AppScreens
 import com.tenko.app.ui.components.AlertDialog
@@ -62,6 +63,7 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
     var showDialog by remember { mutableStateOf(false) }
     var showBottomInput by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+    val aux = if (historyData?.last_name.isNullOrBlank()) "Generar" else "Actualizar"
 
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -82,11 +84,11 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                         if (showDialog) {
                             AlertDialog(
                                 onDismissRequest = { showDialog = false },
-                                title = Pair(
+                                title = DialogTitle(
                                     R.drawable.arrow_rotate_right_solid_full,
-                                    "¿Cerrar conversación?"
+                                    "Cerrar conversación"
                                 ),
-                                confirmButton = Pair("Confirmar") {
+                                confirmButton = DialogButton("Confirmar") {
                                     showDialog = false
                                     scope.launch {
                                         isRefreshing = true
@@ -95,7 +97,7 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                                         isRefreshing = false
                                     }
                                 },
-                                text = { Text("¿Estás seguro de que quieres cerrar esta conversación?") }
+                                content = { Text("¿Estás seguro de que quieres cerrar esta conversación?") }
                             )
                         }
                     }
@@ -144,8 +146,6 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                 items(messages) { message -> ChatBubble(message, navController) }
 
                 item {
-                    val aux =
-                        if (historyData?.last_name.isNullOrBlank()) "Generar" else "Actualizar"
                     if (messages.size == 2) {
                         Row(
                             modifier = Modifier
