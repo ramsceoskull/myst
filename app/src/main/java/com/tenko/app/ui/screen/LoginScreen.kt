@@ -1,6 +1,5 @@
 package com.tenko.app.ui.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +46,8 @@ import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.StarsLove
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController, viewModel: AuthViewModel = viewModel()) {
@@ -64,8 +65,17 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel = viewMod
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val isFormValid by remember(email, password) {
-        mutableStateOf(isValidEmail(email) && isValidPassword(password))
+    fun onDone() {
+        if (!isValidEmail(email) && !isValidPassword(password)) {
+            if (!isValidEmail(email)) emailError = "Correo incompleto"
+            if (!isValidPassword(password)) passwordError =
+                "La contraseña debe tener al menos 8 caracteres.\nIncluyendo mayúsculas, minúsculas, números y caracteres especiales."
+            return
+        }
+
+        keyboardController?.hide()
+        scope.launch { delay(300) }
+        viewModel.login(email, password, navController, tokenManager)
     }
 
     Column(
@@ -143,37 +153,20 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel = viewMod
                 error = passwordError,
                 focusRequester = passwordFocus,
                 imeAction = ImeAction.Done,
-                onDone = {
-                    if (!isValidPassword(password)) {
-                        passwordError =
-                            "La contraseña debe tener al menos 8 caracteres.\nIncluyendo mayúsculas, minúsculas, números y caracteres especiales."
-                        return@FormTextField
-                    }
-                    // Aquí podrías iniciar sesión automáticamente si el formulario es válido
-                    if (isValidEmail(email) && isValidPassword(password)) {
-                        keyboardController?.hide()
-                        viewModel.login(
-                            email.trim(),
-                            password.trim(),
-                            navController,
-                            tokenManager
-                        )
-                    }
-                },
+                onDone = { onDone() },
                 scrollState = scrollState,
                 scope = scope
             )
 
             TextButton(
                 onClick = {
-                    if (isValidEmail(email))
-                        viewModel.forgotPassword(email, navController)
-                    else
-                        Toast.makeText(
-                            context,
-                            "Por favor ingresa tu correo electrónico para recuperar tu contraseña",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    if (!isValidEmail(email)) {
+                        emailError =
+                            if (email.isBlank()) "Por favor ingresa tu correo electrónico"
+                            else "Correo incompleto"
+                        return@TextButton
+                    }
+                    viewModel.forgotPassword(email, navController)
                 },
                 modifier = Modifier.align(Alignment.End),
                 content = {
@@ -188,22 +181,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel = viewMod
             Spacer(modifier = Modifier.height(6.dp))
 
             TextButton(
-                onClick = {
-                    if (!isFormValid) {
-                        Toast.makeText(
-                            context,
-                            "Por favor completa el formulario correctamente antes de iniciar sesión",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@TextButton
-                    }
-                    viewModel.login(
-                        email.trim(),
-                        password.trim(),
-                        navController,
-                        tokenManager
-                    )
-                },
+                onClick = { onDone() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 66.dp),
