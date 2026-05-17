@@ -1,4 +1,4 @@
-package com.tenko.app.regex
+package com.tenko.app.data.utils
 
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 
