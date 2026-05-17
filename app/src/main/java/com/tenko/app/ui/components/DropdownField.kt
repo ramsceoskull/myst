@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenko.app.R
 import com.tenko.app.data.model.Country
+import com.tenko.app.data.model.LaboratoryStudy
 import com.tenko.app.data.model.Speciality
 import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.RaisinBlack
@@ -113,6 +114,66 @@ fun DropdownField(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun CountryDropdown(
+    countries: List<Country>,
+    selected: Country,
+    onSelect: (Country) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var search by remember { mutableStateOf("") }
+
+    val filtered = countries.filter {
+        it.name.contains(search, true) || it.code.contains(search)
+    }
+
+    Box {
+        OutlinedButton(
+            onClick = { expanded = true },
+            modifier = Modifier.defaultMinSize(minHeight = 66.dp),
+            enabled = false,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                disabledContainerColor = White,
+                disabledContentColor = RaisinBlack,
+            ),
+            border = ButtonDefaults.outlinedButtonBorder(true),
+            content = {
+                Text(
+                    text = "${selected.flag} ${selected.code}",
+                    fontSize = 16.sp
+                )
+            }
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = White,
+            shape = RoundedCornerShape(12.dp),
+            content = {
+                Column(
+                    modifier = Modifier
+                        .height(450.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    filtered.forEach { country ->
+                        DropdownMenuItem(
+                            text = {
+                                Text("${country.flag} ${country.name} (${country.code})")
+                            },
+                            onClick = {
+                                onSelect(country)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -204,62 +265,90 @@ fun SpecialityDropdown(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CountryDropdown(
-    countries: List<Country>,
-    selected: Country,
-    onSelect: (Country) -> Unit
+fun LaboratoryStudyDropdown(
+    scope: CoroutineScope,
+    selected: String,
+    onSelected: (LaboratoryStudy) -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
     var expanded by remember { mutableStateOf(false) }
-    var search by remember { mutableStateOf("") }
-
-    val filtered = countries.filter {
-        it.name.contains(search, true) || it.code.contains(search)
+    val options = LaboratoryStudy.entries.sortedBy {
+        Normalizer.normalize(it.displayName, Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+            .lowercase()
     }
 
-    Box {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.defaultMinSize(minHeight = 66.dp),
-            enabled = false,
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                disabledContainerColor = White,
-                disabledContentColor = RaisinBlack,
-            ),
-            border = ButtonDefaults.outlinedButtonBorder(true),
-            content = {
-                Text(
-                    text = "${selected.flag} ${selected.code}",
-                    fontSize = 16.sp
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = { },
+            readOnly = true,
+            placeholder = { Text("Selecciona un estudio", fontSize = 14.sp) },
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.chevron_down_solid_full),
+                    contentDescription = "Dropdown icon",
+                    modifier = Modifier.size(20.dp)
                 )
-            }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = White,
+                unfocusedContainerColor = White,
+                focusedBorderColor = PompAndPower,
+                unfocusedBorderColor = SweetGrey,
+                focusedTrailingIconColor = PompAndPower,
+                unfocusedTrailingIconColor = SweetGrey,
+                focusedTextColor = PompAndPower,
+                unfocusedTextColor = SweetGrey,
+                unfocusedPlaceholderColor = SweetGrey
+            ),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = modifier
+                .menuAnchor()
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 66.dp)
+                .bringIntoViewRequester(bringIntoViewRequester)
+                .onFocusEvent { state ->
+                    if (state.isFocused) {
+                        scope.launch {
+                            delay(250)
+                            bringIntoViewRequester.bringIntoView()
+                        }
+                    }
+                },
         )
 
-        DropdownMenu(
+        ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxHeight(0.6f),
             containerColor = White,
             shape = RoundedCornerShape(12.dp),
-            content = {
-                Column(
-                    modifier = Modifier
-                        .height(450.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    filtered.forEach { country ->
-                        DropdownMenuItem(
-                            text = {
-                                Text("${country.flag} ${country.name} (${country.code})")
-                            },
-                            onClick = {
-                                onSelect(country)
-                                expanded = false
-                            }
-                        )
-                    }
-                }
+        ) {
+            options.forEach { study ->
+                DropdownMenuItem(
+                    text = { Text(study.displayName) },
+                    onClick = {
+                        onSelected(study)
+                        expanded = false
+                    },
+                    colors = MenuItemColors(
+                        textColor = RaisinBlack,
+                        leadingIconColor = Color.Unspecified,
+                        trailingIconColor = Color.Unspecified,
+                        disabledTextColor = Color.Unspecified,
+                        disabledLeadingIconColor = Color.Unspecified,
+                        disabledTrailingIconColor = Color.Unspecified,
+                    )
+                )
             }
-        )
+        }
     }
 }
