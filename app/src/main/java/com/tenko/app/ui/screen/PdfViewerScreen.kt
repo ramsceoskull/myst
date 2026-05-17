@@ -1,144 +1,124 @@
 package com.tenko.app.ui.screen
 
+import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.github.barteksc.pdfviewer.PDFView
-import com.tenko.app.R
-import com.tenko.app.ui.theme.AntiFlashWhite
-import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.data.pdf.getPdfUriFromRaw
+import com.tenko.app.data.pdf.loadPdfPages
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfViewerScreen(
     pdfResId: Int,
-    onAccept: () -> Unit,
-    onDismiss: () -> Unit
+    modifier: Modifier = Modifier
 ) {
+    var pages by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+    var scale by remember { mutableFloatStateOf(1f) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    val listState = rememberLazyListState()
     val context = LocalContext.current
-    var accepted by rememberSaveable { mutableStateOf(false) }
-    var reachedEnd by rememberSaveable { mutableStateOf(false) }
+    val pdfUri = getPdfUriFromRaw(context, pdfResId)
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        painter = painterResource(R.drawable.xmark_solid_full),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = RaisinBlack
-                    )
+    LaunchedEffect(pdfUri) {
+        isLoading = true
+        pages = loadPdfPages(context = context, uri = pdfUri)
+        isLoading = false
+    }
+
+    val currentPage by remember {
+        derivedStateOf {
+            if (pages.isEmpty()) 0 else listState.firstVisibleItemIndex + 1
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoom, _ ->
+                    scale *= zoom
+                    scale = scale.coerceIn(1f, 5f)
                 }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(onDoubleTap = { scale = if (scale > 1f) 1f else 2.5f })
+            }
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
 
-                Text(
-                    text = "Términos y condiciones",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            itemsIndexed(pages) { _, bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
                 )
             }
+        }
 
-            AndroidView(
+        AnimatedVisibility(
+            visible = pages.isNotEmpty(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                factory = { ctx ->
-                    PDFView(ctx, null).apply {
-                        fromStream(context.resources.openRawResource(pdfResId))
-                            .enableSwipe(true)
-                            .swipeHorizontal(false)
-                            .pageSnap(true)
-                            .pageFling(true)
-                            .autoSpacing(true)
-                            .spacing(12)
-                            .enableAntialiasing(true)
-                            .enableDoubletap(true)
-                            .defaultPage(0)
-                            .onPageChange { page, totalPages ->
-                                reachedEnd =
-                                    page == totalPages - 1
-                            }
-                            .load()
-                    }
-                }
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(AntiFlashWhite)
-                    .padding(16.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text =
-                        if (reachedEnd) "Ya puedes aceptar los términos."
-                        else "Debes leer el documento completo.",
-                    color =
-                        if (reachedEnd) Color.Black
-                        else Color.Gray
+                    text = "Página $currentPage / ${pages.size}",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = accepted,
-                        onCheckedChange = { accepted = it },
-                        enabled = reachedEnd
-                    )
-
-                    Text(text = "Acepto los términos y condiciones")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = onAccept,
-                    enabled = accepted,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Aceptar y continuar")
-                }
-
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Cancelar")
-                }
             }
         }
     }
