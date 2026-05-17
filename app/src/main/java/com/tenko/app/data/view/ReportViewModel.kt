@@ -32,7 +32,7 @@ class ReportViewModel : ViewModel() {
      * Genera el PDF desde el API y lo sube a la carpeta del usuario.
      * Solo necesitamos el userId (del AuthViewModel) y opcionalmente el cycleId.
      */
-    fun generateAndSaveReport(userId: String, cycleId: Int? = null) {
+    fun generateAndSaveReport(userId: Int, cycleId: Int? = null) {
         viewModelScope.launch {
             isLoading = true
             reportError = null
@@ -71,7 +71,7 @@ class ReportViewModel : ViewModel() {
     /**
      * Lista los archivos dentro de la carpeta específica del usuario.
      */
-    fun fetchSavedReports(userId: String) {
+    fun fetchSavedReports(userId: Int) {
         viewModelScope.launch {
             isLoading = true
             executeWithRetry {
@@ -98,12 +98,12 @@ class ReportViewModel : ViewModel() {
         }
     }
 
-    private suspend fun uploadPdfToFirebase(bytes: ByteArray, fileName: String, userId: String) {
+    private suspend fun uploadPdfToFirebase(bytes: ByteArray, fileName: String, userId: Int) {
         val storageRef = Firebase.storage.reference.child("reports/$userId/$fileName")
         storageRef.putBytes(bytes).await()
     }
 
-    fun deleteReport(userId: String, fileName: String) {
+    fun deleteReport(userId: Int, fileName: String) {
         viewModelScope.launch {
             isLoading = true
             reportError = null
