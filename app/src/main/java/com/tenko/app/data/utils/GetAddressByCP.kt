@@ -1,4 +1,4 @@
-package com.tenko.app.data.api
+package com.tenko.app.data.utils
 
 import com.tenko.app.data.model.CpResponse
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +14,10 @@ suspend fun getAddressByCP(cp: String): CpResponse? {
             val connection = url.openConnection() as HttpURLConnection
 
             connection.requestMethod = "GET"
-            connection.setRequestProperty("Authorization", "Bearer pk_live_m6aaavy9_39d5hliazue79yueku3yzyponrwnklnu")
+            connection.setRequestProperty(
+                "Authorization",
+                "Bearer pk_live_m6aaavy9_39d5hliazue79yueku3yzyponrwnklnu"
+            )
 
             val response = connection.inputStream.bufferedReader().readText()
             val json = JSONObject(response)

@@ -1,7 +1,8 @@
-package com.tenko.app.data.api
+package com.tenko.app.data.utils
 
 import android.content.Context
 import android.telephony.TelephonyManager
+import android.util.Log
 import com.tenko.app.data.model.Country
 import java.util.Locale
 
@@ -12,6 +13,7 @@ fun detectCountry(context: Context, countries: List<Country>): Country {
     val simCountry = try {
         telephonyManager.simCountryIso?.uppercase()
     } catch (e: Exception) {
+        Log.e("DetectCountry", "Error getting SIM country: ${e.message}")
         null
     }
     val networkCountry = telephonyManager.networkCountryIso?.uppercase()

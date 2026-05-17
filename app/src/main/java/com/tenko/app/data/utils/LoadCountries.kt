@@ -1,4 +1,4 @@
-package com.tenko.app.data.api
+package com.tenko.app.data.utils
 
 import android.content.Context
 import com.google.gson.Gson
@@ -14,6 +14,7 @@ fun loadCountries(context: Context): List<Country> {
         val type = object : TypeToken<List<Country>>() {}.type
         Gson().fromJson(json, type)
     } catch (e: Exception) {
+        e.printStackTrace()
         emptyList() // evita crash
     }
 }
