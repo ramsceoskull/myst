@@ -192,7 +192,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun updateUser(updateData: UserUpdate, context: Context) {
+    fun updateUser(updateData: UserUpdate, context: Context, onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
             try {
@@ -202,7 +202,7 @@ class AuthViewModel : ViewModel() {
                 }
 
                 if (response.status == HttpStatusCode.OK) {
-                    Toast.makeText(context, "Perfil actualizado", Toast.LENGTH_SHORT).show()
+                    onSuccess()
                     currentUser = response.body<UserResponse>()
                 }
             } catch (e: Exception) {
@@ -323,7 +323,7 @@ class AuthViewModel : ViewModel() {
     }
 
     // --- IMÁGENES (Firebase + Render) ---
-    fun updateProfilePicture(uri: Uri) {
+    fun updateProfilePicture(uri: Uri, context: Context) {
         viewModelScope.launch {
             isLoading = true
             try {
@@ -334,8 +334,11 @@ class AuthViewModel : ViewModel() {
                 val downloadUrl = fileRef.downloadUrl.await().toString()
 
                 updateUserWithUrl(UserUpdate(picture = downloadUrl))
+                Toast.makeText(context, "Imagen actualizada correctamente", Toast.LENGTH_SHORT)
+                    .show()
             } catch (e: Exception) {
                 loginError = "Error al subir imagen"
+                Toast.makeText(context, loginError, Toast.LENGTH_SHORT).show()
             } finally {
                 isLoading = false
             }
