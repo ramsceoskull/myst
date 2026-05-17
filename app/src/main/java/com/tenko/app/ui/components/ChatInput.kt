@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
@@ -59,17 +62,29 @@ fun ChatInput(
     ) {
         TextField(
             value = text,
-            onValueChange = { newText ->
-                text = newText.split(" ")
-                    .joinToString(" ") { word ->
-                        word.replaceFirstChar {
-                            if (it.isLowerCase()) it.titlecase() else it.toString()
-                        }
-                    }
-            },
+            onValueChange = { text = it },
             placeholder = { Text("Escribe tu mensaje...") },
             modifier = Modifier.weight(1f),
-            singleLine = false,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Send
+            ),
+            keyboardActions = KeyboardActions(
+                onSend = {
+                    if (text.isBlank()) {
+                        Toast.makeText(
+                            context,
+                            "No puedes enviar un mensaje vacío",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    } else {
+                        onSend(text.trim())
+                        text = ""
+                    }
+                }
+            ),
             maxLines = 4,
             colors = colors
         )
@@ -138,6 +153,26 @@ fun ChatInput(
             },
             placeholder = { Text("Escribe tu mensaje...") },
             modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Send
+            ),
+            keyboardActions = KeyboardActions(
+                onSend = {
+                    if (text.isBlank()) {
+                        Toast.makeText(
+                            context,
+                            "No puedes enviar un mensaje vacío",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    } else {
+                        onSend(text.trim())
+                        text = ""
+                    }
+                }
+            ),
             singleLine = true,
             colors = colors
         )
@@ -200,7 +235,29 @@ fun ChatInput(
                     text = newText
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Send
+            ),
+            keyboardActions = KeyboardActions(
+                onSend = {
+                    if (text.isBlank()) {
+                        onSend("0")
+                        text = ""
+                        return@KeyboardActions
+                    } else if (text.toInt() > 20) {
+                        Toast.makeText(
+                            context,
+                            "El valor no puede ser mayor a 20",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                        return@KeyboardActions
+                    }
+                    onSend(text)
+                    text = ""
+                }
+            ),
             placeholder = { Text("Digite la cantidad...") },
             supportingText = {
                 if (text.isBlank()) Text(
