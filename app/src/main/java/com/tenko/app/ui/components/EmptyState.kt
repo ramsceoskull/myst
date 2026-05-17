@@ -5,11 +5,14 @@ import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,11 +20,49 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenko.app.R
 import com.tenko.app.data.model.MedicineStatus
 import com.tenko.app.ui.theme.PompAndPower
+import com.tenko.app.ui.theme.Tekhelet
+
+@Composable
+fun EmptyStateFullscreen(
+    icon: Int,
+    title: String,
+    description: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 30.dp),
+        verticalArrangement = spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.size(140.dp),
+            tint = PompAndPower.copy(alpha = 0.6f)
+        )
+
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = description,
+            color = Color.Gray,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
 fun EmptyMedicationState(filter: MedicineStatus) {
@@ -86,15 +127,16 @@ fun EmptyMedicationState(filter: MedicineStatus) {
 }
 
 @Composable
-fun EmptyContactState(
+fun EmptyClinicalHistoryState(
     icon: Int,
     title: String,
-    description: String
+    description: String,
+    onClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 30.dp),
+            .padding(horizontal = 30.dp),
         verticalArrangement = spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -117,6 +159,24 @@ fun EmptyContactState(
             color = Color.Gray,
             fontSize = 16.sp,
             textAlign = TextAlign.Center
+        )
+
+        // Botón para volver al chat si quiere usar el modo cuestionario
+        TextButton(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = Tekhelet
+            ),
+            content = {
+                Text(
+                    text = "¿Generar historial vía chatbot?",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
         )
     }
 }
