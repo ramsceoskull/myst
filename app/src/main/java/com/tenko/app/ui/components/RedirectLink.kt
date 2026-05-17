@@ -96,7 +96,7 @@ fun LoginRedirectText(navController: NavController) {
 @Composable
 fun TermsAndPrivacyText(navController: NavController) {
     val annotatedText = buildAnnotatedString {
-        append("Al hacer clic en \"Continuar\", estás aceptando los\n")
+        append("Al hacer clic en \"Continuar\", estás aceptando las\n")
 
         pushStringAnnotation(tag = "TERMS", annotation = "terms")
         withStyle(
@@ -104,7 +104,7 @@ fun TermsAndPrivacyText(navController: NavController) {
                 color = PompAndPower,
                 textDecoration = TextDecoration.Underline
             )
-        ) { append("Términos de uso") }
+        ) { append("Condiciones de uso") }
         pop()
 
         append(" y ")
@@ -115,7 +115,7 @@ fun TermsAndPrivacyText(navController: NavController) {
                 color = PompAndPower,
                 textDecoration = TextDecoration.Underline
             )
-        ) { append("Política de privacidad") }
+        ) { append("Políticas de privacidad") }
         pop()
     }
 
