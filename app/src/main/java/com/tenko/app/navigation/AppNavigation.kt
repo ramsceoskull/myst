@@ -16,12 +16,10 @@ import com.tenko.app.R
 import com.tenko.app.data.api.TokenManager
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.DoctorViewModel
-import com.tenko.app.ui.components.LaboratoryResultScreen
 import com.tenko.app.ui.screen.AddAppointmentScreen
 import com.tenko.app.ui.screen.AddDoctorScreen
 import com.tenko.app.ui.screen.AddLaboratoryStudyScreen
 import com.tenko.app.ui.screen.AddMedicationScreen
-import com.tenko.app.ui.screen.AddMedicineScreen
 import com.tenko.app.ui.screen.CalendarScreen
 import com.tenko.app.ui.screen.ChatScreen
 import com.tenko.app.ui.screen.ClinicalHistoryScreen
@@ -70,41 +68,26 @@ fun AppNavigation(tokenManager: TokenManager) {
             composable(AppScreens.SignupScreen.route) { SignupScreen(navController, authViewModel) }
             composable(AppScreens.LoginScreen.route) { LoginScreen(navController, authViewModel) }
             composable(AppScreens.ProfileScreen.route) {
-                ProfileScreen(
-                    navController,
-                    authViewModel
-                )
+                ProfileScreen(navController, authViewModel)
             }
             composable(AppScreens.ReportsScreen.route) {
-                ReportsScreen(
-                    navController,
-                    authViewModel
-                )
+                ReportsScreen(navController, authViewModel)
             }
             composable(AppScreens.ClinicalHistoryScreen.route) {
-                ClinicalHistoryScreen(
-                    navController,
-                    authViewModel
-                )
+                ClinicalHistoryScreen(navController, authViewModel)
             }
             composable(AppScreens.LaboratoryStudiesScreen.route) {
                 LaboratoryStudiesScreen(navController)
             }
             composable(AppScreens.AddLaboratoryStudyScreen.route) {
-//                AddLaboratoryStudyScreen()
-                LaboratoryResultScreen(navController)
+                AddLaboratoryStudyScreen(navController)
             }
             composable(AppScreens.UpdateProfileScreen.route) {
-                UpdateProfileScreen(
-                    navController,
-                    authViewModel,
-                    tokenManager
-                )
+                UpdateProfileScreen(navController, authViewModel, tokenManager)
             }
             composable(AppScreens.ChatScreen.route) { ChatScreen(navController) }
             composable(AppScreens.CalendarScreen.route) { CalendarScreen(navController) }
             composable(AppScreens.DoctorsScreen.route) { DoctorsScreen(navController) }
-            composable("add_test") { AddMedicineScreen() }
             composable(AppScreens.AddMedicationScreen.route) { AddMedicationScreen(navController) }
             composable(
                 route = AppScreens.AddAppointmentScreen.route,
@@ -123,12 +106,7 @@ fun AppNavigation(tokenManager: TokenManager) {
                     AddAppointmentScreen(navController, it)
                 }
             }
-            composable(AppScreens.MainScreen.route) {
-                MainScreen(
-                    navController,
-                    authViewModel,
-                )
-            }
+            composable(AppScreens.MainScreen.route) { MainScreen(navController, authViewModel) }
             composable(AppScreens.TermsScreen.route) { PdfViewerScreen(pdfResId = R.raw.terminos) }
             composable(AppScreens.PrivacyPolicyScreen.route) { PdfViewerScreen(pdfResId = R.raw.politicas) }
             composable(
