@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import com.tenko.app.R
 import com.tenko.app.data.view.ChatViewModel
 import com.tenko.app.navigation.AppScreens
+import com.tenko.app.ui.components.AlertDialog
 import com.tenko.app.ui.components.AnswerSelector
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.ChatBubble
@@ -51,10 +52,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewModel()) {
+    LaunchedEffect(Unit) { viewModel.fetchMyHistory() }
+
     val lastMessage = viewModel.messages.collectAsState().value.lastOrNull()
     val messages by viewModel.messages.collectAsState()
     val isTyping by viewModel.isTyping.collectAsState()
+    val historyData by viewModel.historyData.collectAsState()
 
+    var showDialog by remember { mutableStateOf(false) }
     var showBottomInput by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -67,96 +72,91 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
         )
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = "Tenko",
-                onBackClick = { navController.popBackStack() },
-                actions =
-                    Triple(
-                        {
-                            scope.launch {
-                                isRefreshing = true
-                                delay(1000)
-                                navController.popBackStack()
-                                navController.navigate(AppScreens.ChatScreen.route)
-                                isRefreshing = false
-                            }
-                        },
-                        R.drawable.rotate_right_solid_full,
-                        "Reiniciar el chat borrará toda la conversación actual. Esta acción no se puede deshacer."
-                    )
-            )
-        },
-        bottomBar = {
-            if (showBottomInput)
-                Surface(
-                    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-                    shadowElevation = 8.dp,
-                ) {
-                    NavigationBar(
-                        modifier = Modifier.shadow(
-                            elevation = 8.dp,
-                            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-                            ambientColor = RaisinBlack,
-                            spotColor = RaisinBlack,
-                            clip = false
-                        ),
-                        containerColor = White,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                AppTopBar(
+                    title = "Tenko",
+                    onBackClick = { navController.popBackStack() },
+                    actions = {
+                        if (showDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showDialog = false },
+                                title = Pair(
+                                    R.drawable.arrow_rotate_right_solid_full,
+                                    "¿Cerrar conversación?"
+                                ),
+                                confirmButton = Pair("Confirmar") {
+                                    showDialog = false
+                                    scope.launch {
+                                        isRefreshing = true
+                                        delay(1000)
+                                        navController.navigate(AppScreens.ChatScreen.route)
+                                        isRefreshing = false
+                                    }
+                                },
+                                text = { Text("¿Estás seguro de que quieres cerrar esta conversación?") }
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                if (showBottomInput)
+                    Surface(
+                        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                        shadowElevation = 8.dp,
                     ) {
-                        Box(modifier = Modifier.padding(12.dp)) {
-                            if (viewModel.isQuestionnaireMode && lastMessage?.questionRef != null) {
-                                AnswerSelector(lastMessage.questionRef) { answer ->
-                                    viewModel.sendMessage(answer)
+                        NavigationBar(
+                            modifier = Modifier.shadow(
+                                elevation = 8.dp,
+                                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                                ambientColor = RaisinBlack,
+                                spotColor = RaisinBlack,
+                                clip = false
+                            ),
+                            containerColor = White,
+                        ) {
+                            Box(modifier = Modifier.padding(12.dp)) {
+                                if (viewModel.isQuestionnaireMode && lastMessage?.questionRef != null) {
+                                    AnswerSelector(lastMessage.questionRef) { answer ->
+                                        viewModel.sendMessage(answer)
+                                    }
+                                } else if (messages.size > 2) {
+                                    ChatInput(
+                                        onSend = { viewModel.sendMessage(it) },
+                                        modifier = Modifier.imePadding()
+                                    )
                                 }
-                            } else if (viewModel.messages.collectAsState().value.size > 2) {
-                                ChatInput(
-                                    onSend = { viewModel.sendMessage(it) },
-                                    modifier = Modifier.imePadding()
-                                )
                             }
                         }
                     }
-                }
-        },
-        containerColor = BackgroundColor
-    ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                scope.launch {
-                    isRefreshing = true
-                    delay(2000)
-                    navController.popBackStack()
-                    navController.navigate(AppScreens.ChatScreen.route)
-                    isRefreshing = false
-                }
-            }
-        ) {
+            },
+            containerColor = BackgroundColor
+        ) { paddingValues ->
             LazyColumn(
+                modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = paddingValues,
-                modifier = Modifier.fillMaxSize()
+                contentPadding = paddingValues
             ) {
-                item { Spacer(modifier = Modifier.height(20.dp)) }
-                items(messages) { message ->
-                    ChatBubble(message, navController)
-                }
+                item { Spacer(modifier = Modifier.height(30.dp)) }
+
+                items(messages) { message -> ChatBubble(message, navController) }
 
                 item {
-                    Box(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        if (viewModel.messages.collectAsState().value.size == 2) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
+                    val aux =
+                        if (historyData?.last_name.isNullOrBlank()) "Generar" else "Actualizar"
+                    if (messages.size == 2) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            for (option in listOf("$aux historial", "Mi día")) {
                                 OutlinedButton(
                                     onClick = {
-                                        viewModel.sendMessage("Actualizar historial");
+                                        viewModel.sendMessage(option);
                                         showBottomInput = true
                                     },
                                     colors = ButtonDefaults.buttonColors(
@@ -168,24 +168,7 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                                         horizontal = 20.dp,
                                         vertical = 12.dp
                                     ),
-                                    content = { Text("Actualizar historial") }
-                                )
-
-                                OutlinedButton(
-                                    onClick = {
-                                        viewModel.sendMessage("Mi día")
-                                        showBottomInput = true
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Tekhelet,
-                                        contentColor = White,
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(
-                                        horizontal = 20.dp,
-                                        vertical = 12.dp
-                                    ),
-                                    content = { Text("Mi día") }
+                                    content = { Text(option) }
                                 )
                             }
                         }
@@ -195,8 +178,12 @@ fun ChatScreen(navController: NavController, viewModel: ChatViewModel = viewMode
                         TypingIndicator()
                 }
 
-                item { Spacer(modifier = Modifier.height(12.dp)) }
+                item { Spacer(modifier = Modifier.height(30.dp)) }
             }
+        }
+
+        if (isRefreshing) {
+            SplashScreen()
         }
     }
 }
