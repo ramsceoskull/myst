@@ -1,45 +1,60 @@
 package com.tenko.app.data.notifications
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import java.time.LocalDate
+import androidx.core.app.NotificationManagerCompat
+import com.tenko.app.R
 
 class MedicationReceiver : BroadcastReceiver() {
+
     override fun onReceive(context: Context, intent: Intent) {
-        val title = intent.getStringExtra("title") ?: "Toma tu medicamento"
-        val startDateStr = intent.getStringExtra("startDate") // yyyy-MM-dd
-        val endDateStr = intent.getStringExtra("endDate") // yyyy-MM-dd
 
-        // Validar si hoy todavía está dentro del rango
-        val today = LocalDate.now()
-        val endDate = LocalDate.parse(endDateStr)
-        val startDate = LocalDate.parse(startDateStr)
+        createNotificationChannel(context)
 
-        if (!today.isAfter(endDate)) {
-            showNotification(context, title)
-            // Si el tratamiento sigue, podrías reprogramar aquí
-            // o usar una alarma repetitiva.
-        }
-    }
+        val medicationName =
+            intent.getStringExtra("medication_name") ?: "Medicamento"
 
-    private fun showNotification(context: Context, title: String) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "medication_channel"
-
-        val channel = NotificationChannel(channelId, "Recordatorios", NotificationManager.IMPORTANCE_HIGH)
-        notificationManager.createNotificationChannel(channel)
-
-        val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(com.tenko.app.R.drawable.tenko_avatar) // Asegúrate de tener un icono
-            .setContentTitle(title)
-            .setContentText("Es hora de tu dosis programada.")
+        val notification = NotificationCompat.Builder(context, "medication_channel")
+            .setSmallIcon(R.drawable.alarm_clock_solid_full)
+            .setContentTitle("Hora de tu medicamento")
+            .setContentText("Es momento de tomar: $medicationName")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
+            .build()
 
-        notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        if (
+            ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        NotificationManagerCompat.from(context)
+            .notify(System.currentTimeMillis().toInt(), notification)
+    }
+
+    private fun createNotificationChannel(context: Context) {
+        val channel = NotificationChannel(
+            "medication_channel",
+            "Medicamentos",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Recordatorios de medicamentos"
+        }
+
+        val manager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE)
+                    as NotificationManager
+
+        manager.createNotificationChannel(channel)
     }
 }
