@@ -1,4 +1,4 @@
-package com.tenko.app.data.pdf
+package com.tenko.app.data.utils
 
 import android.content.Context
 import android.net.Uri
