@@ -49,10 +49,8 @@ import com.tenko.app.ui.theme.White
 fun AppTopBar(
     title: String,
     onBackClick: (() -> Unit)? = null,
-    actions: Triple<() -> Unit, Int, String> = Triple({}, 0, "")
+    actions: @Composable () -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-
     Surface(
         shadowElevation = 4.dp,
         border = BorderStroke(1.dp, AntiFlashWhite)
@@ -61,7 +59,6 @@ fun AppTopBar(
             title = {
                 Text(
                     text = title,
-                    color = Tekhelet,
                     fontFamily = StarsLove,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 32.sp,
@@ -78,81 +75,30 @@ fun AppTopBar(
                                 lastClickTime = currentTime
                                 callback()
                             }
+                        },
+                        content = {
+                            Icon(
+                                painter = painterResource(R.drawable.chevron_left_solid_full),
+                                contentDescription = "Back",
+                                modifier = Modifier.size(28.dp),
+                                tint = Tekhelet
+                            )
                         }
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(28.dp),
-                            painter = painterResource(R.drawable.chevron_left_solid_full),
-                            contentDescription = "Back",
-                            tint = Tekhelet
-                        )
-                    }
+                    )
                 }
             },
-            actions = {
-                if (actions.second != 0) {
-                    IconButton(onClick = { showDialog = true }) {
-                        Icon(
-                            modifier = Modifier.size(28.dp),
-                            painter = painterResource(id = actions.second),
-                            contentDescription = null,
-                            tint = Tekhelet
-                        )
-                    }
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = White),
+            actions = { actions() },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = White,
+                titleContentColor = Tekhelet,
+                navigationIconContentColor = Tekhelet,
+                actionIconContentColor = Tekhelet
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .background(White)
                 .padding(horizontal = 8.dp)
         )
-
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            actions.first()
-                            showDialog = false
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = White,
-                            containerColor = Tekhelet
-                        ),
-                        content = { Text("Confirmar") }
-                    )
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showDialog = false },
-                        content = { Text("Cancelar", color = SweetGrey) }
-                    )
-                },
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(24.dp),
-                            painter = painterResource(actions.second),
-                            contentDescription = null,
-                        )
-                        Text("¿Estás segura?")
-                    }
-                },
-                text = {
-                    Text(actions.third)
-                },
-                shape = RoundedCornerShape(12.dp),
-                containerColor = White,
-                titleContentColor = Tekhelet,
-                textContentColor = SweetGrey
-            )
-        }
     }
 }
 
