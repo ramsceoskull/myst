@@ -63,7 +63,7 @@ fun EmailSentScreen(
     actionLabel: String,
     email: String?,
     onClick: () -> Unit,
-    onResendClick: () -> Unit
+    onResendClick: (() -> Unit)? = null
 ) {
     var visible by remember { mutableStateOf(false) }
 
@@ -117,7 +117,7 @@ fun EmailSentScreen(
             targetValue = if (visible) 1f else 0f,
             animationSpec = tween(1500)
         )
-        Column (
+        Column(
             modifier = Modifier
                 .offset(y = offset)
                 .alpha(alpha),
@@ -139,7 +139,9 @@ fun EmailSentScreen(
                 )
             }
 
-            ResendEmail(onResendClick)
+            if (onResendClick != null) {
+                ResendEmail(onResendClick)
+            }
         }
     }
 }
