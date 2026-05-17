@@ -182,6 +182,60 @@ fun EmptyClinicalHistoryState(
 }
 
 @Composable
+fun EmptyReportState(
+    icon: Int,
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 30.dp),
+        verticalArrangement = spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.size(140.dp),
+            tint = PompAndPower.copy(alpha = 0.6f)
+        )
+
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = description,
+            color = Color.Gray,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+
+        TextButton(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = Tekhelet
+            ),
+            content = {
+                Text(
+                    text = "Presiona aquí para generar tu primer informe",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
+        )
+    }
+}
+
+@Composable
 fun EmptyAppointmentState(
     icon: Int,
     title: String,
