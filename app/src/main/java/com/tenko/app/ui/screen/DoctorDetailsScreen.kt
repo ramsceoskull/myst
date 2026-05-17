@@ -1,13 +1,10 @@
 package com.tenko.app.ui.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,30 +13,32 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,8 +49,12 @@ import androidx.navigation.NavController
 import com.tenko.app.R
 import com.tenko.app.data.serializable.ContactResponse
 import com.tenko.app.data.view.DoctorViewModel
+import com.tenko.app.navigation.AppScreens
 import com.tenko.app.ui.components.AppTopBar
+import com.tenko.app.ui.components.DoctorHeader
+import com.tenko.app.ui.components.EmptyAppointmentState
 import com.tenko.app.ui.components.FloatingActionButton
+import com.tenko.app.ui.components.ScheduleCard
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.PompAndPower
@@ -59,181 +62,185 @@ import com.tenko.app.ui.theme.StarsLove
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
+import kotlinx.coroutines.launch
 
 @Composable
 fun DoctorDetailsScreen(
     navController: NavController,
-    doctor: ContactResponse
-) {
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = "Detalles del contacto",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(R.drawable.calendar_solid_full) {
-
-            }
-        },
-        bottomBar = {
-            BookAppointmentButton(doctor.id_contact) {
-                Toast.makeText(navController.context, "Contacto eliminado", Toast.LENGTH_SHORT)
-                    .show()
-                navController.popBackStack()
-            }
-        },
-        containerColor = BackgroundColor
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(horizontal = 20.dp, vertical = 30.dp)
-        ) {
-            DoctorHeader(doctor, navController)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                "Acerca del Doctor",
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = doctor.about!!,
-                color = Color.Gray,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                textAlign = TextAlign.Justify
-            )
-
-            HorizontalDivider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp, bottom = 12.dp),
-                color = AntiFlashWhite,
-                thickness = 2.dp
-            )
-
-            Text(
-                "Citas próximas",
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn() {
-                items(count = 3) {
-                    ScheduleCard()
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DoctorHeader(
     doctor: ContactResponse,
-    navController: NavController,
-    viewModel: DoctorViewModel = viewModel(),
+    viewModel: DoctorViewModel = viewModel()
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        val avatar = when (doctor.genre) {
-            0 -> R.drawable.doctor0
-            1 -> R.drawable.doctor1
-            2 -> R.drawable.doctor2
-            3 -> R.drawable.doctor3
-            4 -> R.drawable.doctor4
-            else -> R.drawable.profile_picture_placeholder
-        }
-        var showDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(viewModel.allReminders) {
+        viewModel.fetchReminders()
+        viewModel.filterRemindersByContact(doctor.id_contact)
+    }
+    val isRefreshing = viewModel.isLoading
 
-        Image(
-            painter = painterResource(avatar),
-            contentDescription = "Doctor Avatar",
-            modifier = Modifier
-                .size(150.dp)
-                .background(
-                    color = AntiFlashWhite,
-                    shape = RoundedCornerShape(16.dp)
-                ),
-            contentScale = ContentScale.Crop
-        )
+    var showDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "${doctor.name!!} ${doctor.last_name!!}",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = doctor.specialty!!,
-                    color = Color.Gray,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                AppTopBar(
+                    title = "Detalles del contacto",
+                    onBackClick = { navController.popBackStack() }
+                ) {}
+            },
+            floatingActionButton = {
+                FloatingActionButton(R.drawable.calendar_solid_full) {
+                    navController.navigate(AppScreens.AddAppointmentScreen.createRoute(doctor.id_contact))
+                }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = BackgroundColor
+        ) { paddingValues ->
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    viewModel.fetchReminders()
+                    viewModel.filterRemindersByContact(doctor.id_contact)
+                },
+                modifier = Modifier
+                    .background(White)
+                    .padding(paddingValues)
             ) {
-                TextButton(
-                    onClick = { },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        containerColor = PompAndPower,
-                        contentColor = White
-                    ),
-                    content = {
-                        Text(
-                            text = "Editar",
-                            fontSize = 20.sp,
-                            fontFamily = StarsLove,
-                            fontWeight = FontWeight.ExtraLight,
-                            modifier = Modifier.offset(y = 4.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 20.dp, top = 30.dp, end = 20.dp)
+                ) {
+                    DoctorHeader(navController, doctor)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(
+                            onClick = { },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                containerColor = PompAndPower,
+                                contentColor = White
+                            ),
+                            content = {
+                                Text(
+                                    text = "Editar",
+                                    fontSize = 20.sp,
+                                    fontFamily = StarsLove,
+                                    fontWeight = FontWeight.ExtraLight,
+                                    modifier = Modifier.offset(y = 4.dp)
+                                )
+                            }
+                        )
+                        TextButton(
+                            onClick = { showDialog = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.error
+                            ),
+                            content = {
+                                Text(
+                                    text = "Eliminar",
+                                    fontSize = 20.sp,
+                                    fontFamily = StarsLove,
+                                    fontWeight = FontWeight.ExtraLight,
+                                    modifier = Modifier.offset(y = 4.dp)
+                                )
+                            }
                         )
                     }
-                )
-                TextButton(
-                    onClick = { showDialog = true },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.error),
-                    content = {
-                        Text(
-                            text = "Eliminar",
-                            fontSize = 20.sp,
-                            fontFamily = StarsLove,
-                            fontWeight = FontWeight.ExtraLight,
-                            modifier = Modifier.offset(y = 4.dp)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        "Acerca del Doctor",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = doctor.about!!,
+                        color = Color.Gray,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        textAlign = TextAlign.Justify
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp, bottom = 12.dp),
+                        color = AntiFlashWhite,
+                        thickness = 2.dp
+                    )
+
+                    if (viewModel.filteredReminders.isEmpty() && !isRefreshing)
+                        EmptyAppointmentState(
+                            icon = R.drawable.calendar_xmark_solid_full,
+                            title = "No hay citas próximas",
+                            description = "Parece que no tienes citas agendadas con este doctor. ¡Agrega una nueva cita para mantener un seguimiento de tus consultas!"
                         )
+                    else {
+                        Text(
+                            "Citas próximas",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 18.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(
+                                items = viewModel.filteredReminders,
+                                key = { it.id_reminder }) { reminder ->
+                                ScheduleCard(
+                                    reminder = reminder,
+                                    onDelete = { deletedReminder ->
+                                        viewModel.filteredReminders -= deletedReminder
+                                        scope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Cita eliminada",
+                                                actionLabel = "Deshacer",
+                                                duration = SnackbarDuration.Short
+                                            )
+
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                viewModel.filteredReminders += deletedReminder
+
+                                                viewModel.filteredReminders =
+                                                    viewModel.filteredReminders.sortedBy { it.id_reminder }
+                                            } else {
+                                                viewModel.deleteContactReminder(
+                                                    reminder.id_reminder,
+                                                    reminder.id_contact!!,
+                                                    navController
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+
+                            item { Spacer(modifier = Modifier.height(50.dp)) }
+                        }
                     }
-                )
+                }
             }
         }
 
@@ -280,126 +287,9 @@ fun DoctorHeader(
                 titleContentColor = Tekhelet,
                 textContentColor = SweetGrey
             )
-    }
-}
 
-@Composable
-fun ActionIcon(icon: Int, label: String) {
-    Card(
-        onClick = {},
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                tint = PompAndPower,
-                contentDescription = label,
-                painter = painterResource(icon),
-                modifier = Modifier.size(28.dp)
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                color = PompAndPower,
-                textAlign = TextAlign.Center
-            )
+        if (isRefreshing) {
+            SplashScreen()
         }
-    }
-}
-
-@Composable
-fun ScheduleCard() {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE6E6E6)),
-//        elevation = CardDefaults.cardElevation(6.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(
-                        color = White,
-                        shape = RoundedCornerShape(8.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    tint = PompAndPower,
-                    contentDescription = "Calendar Icon",
-                    painter = painterResource(R.drawable.calendar_solid_full),
-                    modifier = Modifier.size(45.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column {
-                Text(text = "Consultations", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                Text(
-                    text = "Sunday",
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Gray,
-                    fontSize = 13.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Text("9am - 11am", color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun BookAnAppointment() {
-    FloatingActionButton(
-        onClick = {
-// Acción para el botón de chat
-        },
-        containerColor = PompAndPower,
-        modifier = Modifier.width(IntrinsicSize.Max)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                tint = White,
-                contentDescription = "Agregar cita",
-                painter = painterResource(R.drawable.calendar_plus_regular_full),
-                modifier = Modifier.size(30.dp)
-            )
-
-            Text(
-                text = "Agendar",
-                fontSize = 14.sp,
-                color = White,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-fun BookAppointmentButton(
-    contactId: Int,
-    viewModel: DoctorViewModel = viewModel(),
-    onSuccess: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        shadowElevation = 8.dp,
-        color = BackgroundColor
-    ) {
-
     }
 }
