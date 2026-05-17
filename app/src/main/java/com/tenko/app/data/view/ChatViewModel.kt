@@ -86,14 +86,6 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    private fun startQuestionnaire() {
-        isQuestionnaireMode = true
-        currentQuestionIndex = 0
-        responses.clear()
-        addAssistantMessage("Perfecto, vamos a actualizar tu historial. Son unas cuantas preguntas para conocerte mejor. 💕")
-        askNextQuestion()
-    }
-
     fun processDailyLog(text: String) {
         if (text.isBlank()) return
 
@@ -135,6 +127,27 @@ class ChatViewModel : ViewModel() {
                 _isTyping.value = false
             }
         }
+    }
+
+    // Agrega esto a tu ChatViewModel
+    suspend fun hasClinicalHistory(): Boolean {
+        return try {
+            val response = ApiClient.client.get("https://api-myst.onrender.com/clinical-history/me")
+
+            // Si el servidor responde OK, significa que sí existe
+            response.status == HttpStatusCode.OK
+        } catch (e: Exception) {
+            println("Error al verificar historial: ${e.localizedMessage}")
+            false // Ante un error de conexión, asumimos false o manejamos el error
+        }
+    }
+
+    private fun startQuestionnaire() {
+        isQuestionnaireMode = true
+        currentQuestionIndex = 0
+        responses.clear()
+        addAssistantMessage("Perfecto, vamos a actualizar tu historial. Son unas cuantas preguntas para conocerte mejor. 💕")
+        askNextQuestion()
     }
 
     private fun askNextQuestion() {
