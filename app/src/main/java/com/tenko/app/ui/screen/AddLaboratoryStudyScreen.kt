@@ -2,17 +2,26 @@ package com.tenko.app.ui.screen
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -32,6 +41,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -40,6 +50,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,15 +61,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.Pair
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tenko.app.R
@@ -69,8 +85,13 @@ import com.tenko.app.data.serializable.LabStudyCreate
 import com.tenko.app.data.view.LabViewModel
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.DatePickerField
+import com.tenko.app.ui.components.DropdownField
 import com.tenko.app.ui.components.FloatingActionButton
+import com.tenko.app.ui.components.FormTextField
+import com.tenko.app.ui.components.HeaderAddLabResults
 import com.tenko.app.ui.components.LaboratoryStudyDropdown
+import com.tenko.app.ui.components.LaboratoryVariableCard
+import com.tenko.app.ui.components.inputField
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.PompAndPower
 import com.tenko.app.ui.theme.RaisinBlack
@@ -96,7 +117,6 @@ fun AddLaboratoryStudyScreen(
     val dateFocus = remember { FocusRequester() }
     val variableFocus = remember { FocusRequester() }
     val valueFocus = remember { FocusRequester() }
-    val unitFocus = remember { FocusRequester() }
 
     var studyDate by remember { mutableStateOf<LocalDate?>(null) }
     var showDateDialog by remember { mutableStateOf(false) }
@@ -122,21 +142,13 @@ fun AddLaboratoryStudyScreen(
     var nameError by remember { mutableStateOf<String?>(null) }
     var dateError by remember { mutableStateOf("") }
 
+    val scrollState = rememberScrollState()
+
     var study by remember { mutableStateOf<LaboratoryStudy?>(null) }
 
-    val variables = remember { mutableStateListOf(LaboratoryVariable()) }
-
-    val units = listOf(
-        "mg/dL",
-        "g/dL",
-        "mmol/L",
-        "UI/L",
-        "mEq/L",
-        "%",
-        "ng/mL",
-        "pg/mL",
-        "cells/µL"
-    )
+    val variables = remember {
+        mutableStateListOf(LaboratoryVariable(expanded = true))
+    }
 
     Scaffold(
         topBar = {
@@ -152,45 +164,78 @@ fun AddLaboratoryStudyScreen(
         },
         floatingActionButton = {
             FloatingActionButton(R.drawable.floppy_disk_solid_full) {
-                // Mapeo exhaustivo y validación de datos hacia el Serializable final
-                val validResults = variables.mapNotNull { variable ->
-                    val parsedValue = variable.value.toDoubleOrNull()
+                var hasErrors = false
 
-                    if (variable.parameter.isNotBlank() && parsedValue != null) {
-                        LabResultBase(
-                            parameter = variable.parameter.trim(),
-                            value = parsedValue,
-                            unit = variable.unit.ifBlank { null },
-                            reference_range = null
+                val hasAtLeastOneValidVariable = variables.any { it.isValid() }
+
+                variables.forEachIndexed { index, variable ->
+                    val isEmpty = variable.isEmpty()
+
+                    // Si no existe ninguna variable válida,
+                    // la primera vacía debe marcar error
+                    if (isEmpty && !hasAtLeastOneValidVariable) {
+                        variables[index] = variable.copy(
+                            hasError = true,
+                            parameterError = "Ingresa el nombre de la variable",
+                            valueError = "Ingresa un valor",
+                            unitError = "No se ha ingresado la unidad de medida"
                         )
-                    } else null
+
+                        hasErrors = true
+
+                        return@forEachIndexed
+                    }
+
+                    // Si ya existe una válida, ignoramos vacías extra
+                    if (isEmpty) {
+                        variables[index] = variable.copy(
+                            hasError = false,
+                            parameterError = null,
+                            valueError = null,
+                            unitError = null
+                        )
+
+                        return@forEachIndexed
+                    }
+
+                    val validatedVariable = variable.validate()
+
+                    variables[index] = validatedVariable
+
+                    if (validatedVariable.hasError) hasErrors = true
                 }
 
-                if (study == null || studyDate == null || validResults.isEmpty()) {
+                val validResults = variables.mapNotNull { it.toLabResult() }
+
+                if (study == null || studyDate == null || hasErrors || !hasAtLeastOneValidVariable) {
                     nameError =
-                        if (study == null) "Por favor ingresa el nombre del estudio" else null
+                        if (study == null)
+                            "Por favor selecciona el estudio"
+                        else null
+
                     dateError =
-                        if (studyDate == null) "Por favor selecciona la fecha del estudio" else ""
-                    if (validResults.isEmpty()) {
+                        if (studyDate == null)
+                            "Por favor selecciona la fecha"
+                        else ""
+
+                    if (!hasAtLeastOneValidVariable) {
                         Toast.makeText(
                             context,
-                            "Agrega al menos una variable válida con valor numérico",
+                            "Agrega al menos una variable",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                     return@FloatingActionButton
                 }
 
-                // Construcción del Payload esperado por tu ApiClient
                 val payload = LabStudyCreate(
                     laboratory_name = study?.displayName,
                     test_date = studyDate!!,
                     results = validResults
                 )
 
-                // Despacho al ViewModel
                 viewModel.createLabStudy(payload, context) {
-                    navController.popBackStack() // Regresa al éxito
+                    navController.popBackStack()
                 }
             }
         },
@@ -199,11 +244,12 @@ fun AddLaboratoryStudyScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .padding(padding)
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { HeaderContent() }
+            item { HeaderAddLabResults() }
 
             item {
                 Text(
@@ -254,6 +300,7 @@ fun AddLaboratoryStudyScreen(
                         dateError = ""
                         showDateDialog = true
                     },
+                    modifier = Modifier.focusRequester(dateFocus),
                 )
                 AnimatedVisibility(
                     visible = dateError.isNotEmpty(),
@@ -268,215 +315,86 @@ fun AddLaboratoryStudyScreen(
                 }
             }
 
+            item {
+                Text(
+                    text = "Variables y resultados",
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
+
             itemsIndexed(variables) { index, variable ->
+                LaboratoryVariableCard(
+                    index = index,
+                    variable = variable,
+                    scrollState = scrollState,
+                    scope = scope,
+                    variableFocus = variableFocus,
+                    valueFocus = valueFocus,
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 4.dp
-                    )
-                ) {
-
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            Text(
-                                text = if (
-                                    variable.parameter.isBlank()
-                                ) {
-                                    "Variable ${index + 1}"
-                                } else {
-                                    variable.parameter
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            IconButton(
-                                onClick = {
-
-                                    variables[index] = variable.copy(
-                                        expanded = !variable.expanded
-                                    )
-                                }
-                            ) {
-
-                                Icon(
-                                    imageVector = if (
-                                        variable.expanded
-                                    ) {
-                                        Icons.Default.ExpandLess
-                                    } else {
-                                        Icons.Default.ExpandMore
-                                    },
-                                    contentDescription = null
-                                )
-                            }
-                        }
-
-                        AnimatedVisibility(
-                            visible = variable.expanded
-                        ) {
-
-                            Column {
-
-                                Spacer(
-                                    modifier = Modifier.height(12.dp)
-                                )
-
-                                OutlinedTextField(
-                                    value = variable.parameter,
-                                    onValueChange = {
-
-                                        variables[index] = variable.copy(
-                                            parameter = it
-                                        )
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    label = {
-                                        Text("Nombre de la variable")
-                                    },
-                                    singleLine = true
-                                )
-
-                                AnimatedVisibility(
-                                    visible = variable.parameter.isNotBlank()
-                                ) {
-
-                                    Column {
-
-                                        Spacer(
-                                            modifier = Modifier.height(12.dp)
-                                        )
-
-                                        OutlinedTextField(
-                                            value = variable.value,
-                                            onValueChange = {
-
-                                                variables[index] = variable.copy(
-                                                    value = it.filter { char ->
-                                                        char.isDigit() || char == '.'
-                                                    }
-                                                )
-                                            },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            label = {
-                                                Text("Resultado")
-                                            },
-                                            keyboardOptions = KeyboardOptions(
-                                                keyboardType = KeyboardType.Decimal
-                                            ),
-                                            singleLine = true
-                                        )
-
-                                        Spacer(
-                                            modifier = Modifier.height(12.dp)
-                                        )
-
-                                        var expanded by remember {
-                                            mutableStateOf(false)
-                                        }
-
-                                        ExposedDropdownMenuBox(
-                                            expanded = expanded,
-                                            onExpandedChange = {
-                                                expanded = !expanded
-                                            }
-                                        ) {
-
-                                            OutlinedTextField(
-                                                value = variable.unit,
-                                                onValueChange = {},
-                                                modifier = Modifier
-                                                    .menuAnchor()
-                                                    .fillMaxWidth(),
-                                                readOnly = true,
-                                                label = {
-                                                    Text("Unidad de medida")
-                                                },
-                                                trailingIcon = {
-
-                                                    ExposedDropdownMenuDefaults.TrailingIcon(
-                                                        expanded = expanded
-                                                    )
-                                                }
-                                            )
-
-                                            ExposedDropdownMenu(
-                                                expanded = expanded,
-                                                onDismissRequest = {
-                                                    expanded = false
-                                                }
-                                            ) {
-
-                                                units.forEach { unit ->
-
-                                                    DropdownMenuItem(
-                                                        text = {
-                                                            Text(unit)
-                                                        },
-                                                        onClick = {
-
-                                                            variables[index] = variable.copy(
-                                                                unit = unit
-                                                            )
-
-                                                            expanded = false
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    onVariableChange = {
+                        variables[index] = it
                     }
-                }
+                )
             }
 
             item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(
+                        onClick = {
+                            var hasErrors = false
+                            val lastIndex = variables.lastIndex
+                            val lastVariable = variables[lastIndex]
 
-                Button(
-                    onClick = {
+                            val validatedVariable = lastVariable.validate()
 
-                        variables.forEachIndexed { i, item ->
+                            if (validatedVariable.hasError) hasErrors = true
 
-                            variables[i] = item.copy(
-                                expanded = false
+                            if (hasErrors) {
+                                Toast.makeText(
+                                    context,
+                                    "Completa la variable actual",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                return@Button
+                            }
+
+                            variables.forEachIndexed { i, item ->
+                                variables[i] = item.copy(expanded = false)
+                            }
+
+                            variables.add(LaboratoryVariable(expanded = true))
+                        },
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Tekhelet,
+                            contentColor = White
+                        ),
+                        contentPadding = PaddingValues(12.dp),
+                        content = {
+                            Icon(
+                                painter = painterResource(R.drawable.notes_medical_solid_full),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
                             )
                         }
-
-                        variables.add(
-                            LaboratoryVariable(
-                                expanded = true
-                            )
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
                     )
 
-                    Spacer(
-                        modifier = Modifier.width(8.dp)
+                    Text(
+                        text = "Nueva variable",
+                        color = Tekhelet.copy(alpha = 0.7f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
                     )
-
-                    Text("Agregar nueva variable")
                 }
 
-                Spacer(
-                    modifier = Modifier.height(24.dp)
-                )
+                Spacer(modifier = Modifier.height(30.dp))
             }
         }
 
@@ -545,22 +463,47 @@ fun AddLaboratoryStudyScreen(
     }
 }
 
-@Composable
-fun HeaderContent() {
-    Spacer(modifier = Modifier.height(30.dp))
+private fun LaboratoryVariable.validate(): LaboratoryVariable {
+    var parameterError: String? = null
+    var valueError: String? = null
+    var unitError: String? = null
 
-    Text(
-        text = "Datos del estudio",
-        color = RaisinBlack,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.SemiBold
+    if (parameter.isBlank()) parameterError = "Ingresa el nombre de la variable"
+
+    if (value.isBlank()) valueError =
+        "Ingresa un valor" else if (value.toDoubleOrNull() == null) valueError =
+        "Ingresa un número válido"
+
+    if (unit.isBlank()) unitError = "No se ha ingresado la unidad de medida"
+
+    val hasError =
+        parameterError != null || valueError != null || unitError != null
+
+    return copy(
+        hasError = hasError,
+        parameterError = parameterError,
+        valueError = valueError,
+        unitError = unitError
     )
+}
 
-    Spacer(modifier = Modifier.height(8.dp))
+private fun LaboratoryVariable.isEmpty(): Boolean {
+    return parameter.isBlank() && value.isBlank() && unit.isBlank()
+}
 
-    Text(
-        text = "Agrega los resultados de tu estudio de laboratorio. Puedes incluir múltiples variables y sus respectivos resultados.",
-        fontSize = 14.sp,
-        textAlign = TextAlign.Justify
+private fun LaboratoryVariable.isValid(): Boolean {
+    return parameter.isNotBlank() && value.toDoubleOrNull() != null && unit.isNotBlank()
+}
+
+private fun LaboratoryVariable.toLabResult(): LabResultBase? {
+    val parsedValue = value.toDoubleOrNull() ?: return null
+
+    if (!isValid()) return null
+
+    return LabResultBase(
+        parameter = parameter.trim(),
+        value = parsedValue,
+        unit = unit.ifBlank { null },
+        reference_range = null
     )
 }
