@@ -18,6 +18,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -46,7 +47,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.Normalizer
-import kotlin.text.contains
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +95,79 @@ fun DropdownField(
             onDismissRequest = { expanded = false },
             containerColor = White,
             shape = RoundedCornerShape(12.dp),
+        ) {
+            options.forEach {
+                DropdownMenuItem(
+                    text = { Text(it) },
+                    onClick = {
+                        onSelected(it)
+                        expanded = false
+                    },
+                    colors = MenuItemColors(
+                        textColor = RaisinBlack,
+                        leadingIconColor = Color.Unspecified,
+                        trailingIconColor = Color.Unspecified,
+                        disabledTextColor = Color.Unspecified,
+                        disabledLeadingIconColor = Color.Unspecified,
+                        disabledTrailingIconColor = Color.Unspecified,
+                    )
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UnitDropdown(
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit,
+    error: String?,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = { },
+            modifier = Modifier
+                .defaultMinSize(minHeight = 66.dp)
+                .menuAnchor(),
+            readOnly = true,
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(if (expanded) R.drawable.chevron_up_solid_full else R.drawable.chevron_down_solid_full),
+                    contentDescription = "Dropdown icon",
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            isError = error != null,
+            singleLine = true,
+            shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = White,
+                unfocusedContainerColor = PompAndPower,
+                focusedBorderColor = PompAndPower,
+                unfocusedBorderColor = PompAndPower,
+                focusedTrailingIconColor = PompAndPower,
+                unfocusedTrailingIconColor = White,
+                focusedTextColor = PompAndPower,
+                unfocusedTextColor = White,
+                errorContainerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(12.dp),
+            containerColor = White,
         ) {
             options.forEach {
                 DropdownMenuItem(
