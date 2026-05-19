@@ -116,6 +116,18 @@ fun LaboratoryVariableCard(
                     )
 
                     AnimatedVisibility(visible = variable.parameter.isNotBlank()) {
+                        val units = listOf(
+                            "mg/dL",
+                            "g/dL",
+                            "mmol/L",
+                            "UI/L",
+                            "mEq/L",
+                            "%",
+                            "ng/mL",
+                            "pg/mL",
+                            "cells/µL"
+                        )
+
                         Column {
                             val unit = inputField(
                                 value = variable.value,
@@ -133,6 +145,7 @@ fun LaboratoryVariableCard(
                                     "Unidad"
                                 ),
                                 placeholder = "Ej: 85, 13.5, etc.",
+                                options = units,
                                 error = listOf(variable.valueError, variable.unitError),
                                 focusRequester = valueFocus,
                                 imeAction = ImeAction.Next,
