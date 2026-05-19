@@ -4,12 +4,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,9 +33,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -49,21 +47,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tenko.app.R
 import com.tenko.app.data.api.TokenManager
+import com.tenko.app.data.model.DialogButton
+import com.tenko.app.data.model.DialogTitle
 import com.tenko.app.data.serializable.UserUpdate
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.regex.isValidPassword
+import com.tenko.app.ui.components.AlertDialog
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.DeleteAccountRow
+import com.tenko.app.ui.components.FormTextField
 import com.tenko.app.ui.components.InfoRow
 import com.tenko.app.ui.components.PhotoActionsSection
-import com.tenko.app.ui.components.nameInput
-import com.tenko.app.ui.components.passwordInput
+import com.tenko.app.ui.components.SectionTitle
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,12 +73,20 @@ fun UpdateProfileScreen(
     tokenManager: TokenManager
 ) {
     val user = authViewModel.currentUser
+    val isRefreshing = authViewModel.isLoading
+    val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     LaunchedEffect(Unit) {
-        if (user == null) {
+        if (user == null)
             authViewModel.getUser(navController)
-        }
     }
 
+    var showDialog by remember { mutableStateOf(false) }
+    var showInput by remember { mutableStateOf(false) }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var password by remember { mutableStateOf("") }
     var newName by remember { mutableStateOf("") }
     val initials by remember(newName) {
         derivedStateOf {
@@ -90,227 +97,196 @@ fun UpdateProfileScreen(
                 .joinToString("")
         }
     }
-    var showDialog by remember { mutableStateOf(false) }
-    var showInput by remember { mutableStateOf(false) }
-    var isRefreshing by remember { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-//    URI temporal para camara
-    val tempUri = remember {
-        val file = File.createTempFile("temp_photo", ".jpg", context.cacheDir)
-        FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.provider",
-            file
-        )
-    }
 
 //    Launchers
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            authViewModel.updateProfilePicture(it)
+            authViewModel.updateProfilePicture(it, context)
         }
     }
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success)
-            authViewModel.updateUser(UserUpdate(picture = tempUri.toString()), context)
+
+    fun onDone() {
+        if (newName.isBlank()) {
+            nameError = "El nombre no puede estar vacío"
+            return
+        }
+
+        keyboardController?.hide()
+        authViewModel.updateUser(
+            updateData = UserUpdate(
+                name = newName,
+                initials = if (initials.length == 2) initials else newName.take(2).uppercase()
+            ),
+            context = context
+        ) {
+            Toast
+                .makeText(
+                    context,
+                    "Nombre actualizado",
+                    Toast.LENGTH_SHORT
+                )
+                .show()
+        }
+        showInput = false
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = "Editar Perfil",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
-        contentColor = BackgroundColor
-    ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                scope.launch {
-                    isRefreshing = true
-                    delay(2000)
-                    authViewModel.getUser(navController)
-                    isRefreshing = false
-                }
+    fun onDeleteAccount() {
+        if (!isValidPassword(password)) {
+            passwordError =
+                if (password.isBlank()) "La contraseña no puede estar vacía" else
+                    if (!isValidPassword(password)) "La contraseña no cumple con los requisitos" else null
+            return
+        }
+
+        authViewModel.deleteUser(
+            password,
+            tokenManager,
+            navController
+        )
+        showDialog = false
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                AppTopBar(
+                    title = "Editar Perfil",
+                    onBackClick = { navController.popBackStack() }
+                ) {}
             },
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 30.dp)
-                    .verticalScroll(rememberScrollState())
+            contentColor = BackgroundColor
+        ) { paddingValues ->
+            val nameFocus = remember { FocusRequester() }
+            val passwordFocus = remember { FocusRequester() }
+
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { authViewModel.getUser(navController) },
+                modifier = Modifier.padding(paddingValues)
             ) {
-                PhotoActionsSection(
-                    imageUrl = user?.picture?.toUri(),
-                    onEditClick = { galleryLauncher.launch("image/*") },
-                    onRemoveClick = { authViewModel.updateUser(UserUpdate(picture = ""), context) }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Tus datos personales",
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = Tekhelet,
-                    fontSize = 18.sp
-                )
-
-                InfoRow(
-                    label = "Nombre",
-                    value = user?.name ?: "Jane Doe",
-                    onClick = { showInput = true }
-                )
-
-                AnimatedVisibility(
-                    visible = showInput,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 30.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    Column {
-                        newName = nameInput(true).first
-
-                        Row {
-                            TextButton(onClick = { showInput = false }) {
-                                Text("Cancelar", color = Color.Gray)
+                    PhotoActionsSection(
+                        imageUrl = user?.picture?.toUri(),
+                        onEditClick = { galleryLauncher.launch("image/*") },
+                        onRemoveClick = {
+                            if (user?.picture.isNullOrEmpty()) {
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "No tienes una foto de perfil que eliminar",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                    .show()
+                                return@PhotoActionsSection
                             }
-                            TextButton(
-                                onClick = {
-                                    if (newName.isNotBlank()) {
-                                        scope.launch {
-                                            isRefreshing = true
-                                            authViewModel.updateUser(
-                                                updateData = UserUpdate(
-                                                    name = newName, initials =
-                                                        if (initials.length == 2) initials
-                                                        else newName.take(2).uppercase()
-                                                ),
-                                                context = context
-                                            )
-                                            authViewModel.getUser(navController)
-                                            isRefreshing = false
-                                        }
-                                        showInput = false
-                                    } else
-                                        Toast.makeText(
-                                            context,
-                                            "El nombre no puede estar vacío",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                            authViewModel.updateUser(UserUpdate(picture = ""), context) {
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Foto de perfil eliminada",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                    .show()
+                            }
+                        }
+                    )
+
+                    SectionTitle(text = "Tus datos personales")
+
+                    InfoRow(
+                        label = "Nombre",
+                        value = user?.name ?: "Jane Doe",
+                        showInput = showInput,
+                        onClick = { showInput = true },
+                        onCancel = { showInput = false },
+                        onDone = { onDone() },
+                        input = {
+                            FormTextField(
+                                type = ContentType.NewUsername,
+                                value = newName,
+                                onValueChange = {
+                                    newName = it
+                                    nameError = null
                                 },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = White,
-                                    containerColor = Tekhelet
-                                ),
-                                content = { Text("Cambiar nombre") }
+                                label = "",
+                                placeholder = "Nombre (sin apellidos)",
+                                error = nameError,
+                                focusRequester = nameFocus,
+                                imeAction = ImeAction.Next,
+                                onNext = { onDone() },
+                                scrollState = scrollState,
+                                scope = scope
                             )
                         }
-                    }
+                    )
+
+                    InfoRow(
+                        label = "Iniciales",
+                        value = user?.initials ?: "JD",
+                    )
+
+                    InfoRow(
+                        label = "Correo electrónico",
+                        value = user?.email ?: "tenko@myst.com",
+                    )
+
+                    SectionTitle(text = "Otro")
+
+                    DeleteAccountRow(
+                        label = "Eliminar cuenta",
+                        onClick = { showDialog = true }
+                    )
                 }
 
-                InfoRow(
-                    label = "Iniciales",
-                    value = user?.initials ?: "JD",
-                )
-
-                InfoRow(
-                    label = "Correo electrónico",
-                    value = user?.email ?: "tenko@myst.com",
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Otro",
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = Tekhelet,
-                    fontSize = 18.sp
-                )
-
-                DeleteAccountRow(
-                    label = "Eliminar cuenta",
-                    onClick = { showDialog = true }
-                )
-            }
-
-            if (showDialog) {
-                var password by remember { mutableStateOf("") }
-
-                AlertDialog(
-                    onDismissRequest = { showDialog = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                if (password.isNotBlank()) {
-                                    if (isValidPassword(password)) {
-                                        authViewModel.deleteUser(
-                                            password,
-                                            tokenManager,
-                                            navController
-                                        )
-                                        showDialog = false
-                                    } else
-                                        Toast.makeText(
-                                            context,
-                                            "La contraseña no cumple con los requisitos",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                } else
-                                    Toast.makeText(
-                                        context,
-                                        "Por favor, ingresa tu contraseña",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = White,
-                                containerColor = Tekhelet
-                            ),
-                            content = { Text("Eliminar") }
-                        )
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = { showDialog = false },
-                            content = { Text("Cancelar", color = SweetGrey) }
-                        )
-                    },
-                    title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                painter = painterResource(R.drawable.trash_can_regular_full),
-                                contentDescription = null,
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = DialogTitle(
+                            icon = R.drawable.trash_solid_full,
+                            text = "¿Eliminar cuenta?"
+                        ),
+                        confirmButton = DialogButton("Eliminar") { onDeleteAccount() },
+                        content = {
+                            Text(
+                                "Esta acción no se puede deshacer.\n" +
+                                        "Por favor, ingresa tu contraseña para confirmar:"
                             )
-                            Text("¿Estás segura?")
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            FormTextField(
+                                type = ContentType.Password,
+                                value = password,
+                                onValueChange = {
+                                    password = it
+                                    passwordError = null
+                                },
+                                label = "",
+                                placeholder = "Contraseña",
+                                error = passwordError,
+                                focusRequester = passwordFocus,
+                                imeAction = ImeAction.Done,
+                                onDone = { onDeleteAccount() },
+                                scrollState = scrollState,
+                                scope = scope
+                            )
                         }
-                    },
-                    text = {
-                        Column {
-                            Text("Esta acción no se puede deshacer.\nPor favor, ingresa tu contraseña para confirmar:")
-                            Spacer(modifier = Modifier.height(8.dp))
-                            password = passwordInput(false)
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    containerColor = White,
-                    titleContentColor = Tekhelet,
-                    textContentColor = SweetGrey
-                )
+                    )
+                }
             }
+        }
+
+        if (isRefreshing) {
+            SplashScreen()
         }
     }
 }
