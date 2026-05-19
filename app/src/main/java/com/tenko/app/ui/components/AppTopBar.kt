@@ -49,7 +49,7 @@ import com.tenko.app.ui.theme.White
 fun AppTopBar(
     title: String,
     onBackClick: (() -> Unit)? = null,
-    actions: @Composable () -> Unit
+    actions: (@Composable () -> Unit)? = null
 ) {
     Surface(
         shadowElevation = 4.dp,
@@ -80,14 +80,13 @@ fun AppTopBar(
                             Icon(
                                 painter = painterResource(R.drawable.chevron_left_solid_full),
                                 contentDescription = "Back",
-                                modifier = Modifier.size(28.dp),
-                                tint = Tekhelet
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     )
                 }
             },
-            actions = { actions() },
+            actions = { actions?.invoke() },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = White,
                 titleContentColor = Tekhelet,
