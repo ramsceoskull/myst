@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,10 +64,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenko.app.R
-import com.tenko.app.data.api.getAddressByCP
-import com.tenko.app.data.api.loadCountries
+import com.tenko.app.data.utils.formatAsYouType
+import com.tenko.app.data.utils.isValidNumber
+import com.tenko.app.data.utils.loadCountries
 import com.tenko.app.regex.PasswordRequirement
-import com.tenko.app.regex.formatAsYouType
 import com.tenko.app.regex.hasDigit
 import com.tenko.app.regex.hasLowerCase
 import com.tenko.app.regex.hasMinLength
@@ -74,7 +75,6 @@ import com.tenko.app.regex.hasNoSpaces
 import com.tenko.app.regex.hasSpecialChar
 import com.tenko.app.regex.hasUpperCase
 import com.tenko.app.regex.isValidEmail
-import com.tenko.app.regex.isValidNumber
 import com.tenko.app.regex.isValidPassword
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.PompAndPower
@@ -339,6 +339,9 @@ fun inputField(
                     focusedTrailingIconColor = PompAndPower,
                     unfocusedTrailingIconColor = SweetGrey,
                     unfocusedPlaceholderColor = Color.Gray,
+                    errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+                    errorBorderColor = MaterialTheme.colorScheme.error,
+                    errorPlaceholderColor = MaterialTheme.colorScheme.error
                 )
             )
         }
@@ -360,6 +363,145 @@ fun inputField(
     }
 
     return phoneNumber to formatted
+}
+
+@Composable
+fun inputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: Pair<String, String>,
+    placeholder: String,
+    options: List<String>,
+    error: List<String?>,
+    focusRequester: FocusRequester,
+    imeAction: ImeAction,
+    scrollState: ScrollState? = null,
+    scope: CoroutineScope,
+    onNext: (() -> Unit)? = null,
+    onDone: (() -> Unit)? = null
+): String {
+    val unitFocus = remember { FocusRequester() }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val context = LocalContext.current
+
+    var unit by remember { mutableStateOf("") }
+
+    Text(
+        text = label.first,
+        color = Color.Gray,
+        fontSize = 14.sp
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = { newText ->
+                val regex = Regex("""^\d{0,2}(\.\d{0,3})?$""")
+
+                if (newText.isEmpty() || regex.matches(newText)) {
+                    onValueChange(newText)
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Formato inválido",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            modifier = Modifier
+                .weight(1f)
+                .defaultMinSize(minHeight = 66.dp)
+                .focusRequester(focusRequester)
+                .bringIntoViewRequester(bringIntoViewRequester)
+                .onFocusEvent { state ->
+                    if (state.isFocused) {
+                        scope.launch {
+                            delay(250)
+                            bringIntoViewRequester.bringIntoView()
+                            scrollState?.animateScrollBy(150f)
+                        }
+                    }
+                },
+            placeholder = { Text(placeholder, fontSize = 14.sp) },
+            isError = error[0] != null,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Decimal,
+                imeAction = imeAction
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    onNext?.invoke()
+                    unitFocus.requestFocus()
+                },
+                onDone = { onDone?.invoke() }
+            ),
+            singleLine = true,
+            shape = RoundedCornerShape(
+                topStart = 12.dp,
+                bottomStart = 12.dp,
+                topEnd = 0.dp,
+                bottomEnd = 0.dp
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = White,
+                focusedContainerColor = White,
+                unfocusedBorderColor = Color.LightGray,
+                focusedBorderColor = PompAndPower,
+                unfocusedPlaceholderColor = Color.Gray,
+                focusedPlaceholderColor = Color.Gray,
+                errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+                errorBorderColor = MaterialTheme.colorScheme.error,
+                errorPlaceholderColor = MaterialTheme.colorScheme.error
+            ),
+        )
+
+        UnitDropdown(
+            options = options,
+            selected = unit.ifEmpty { "Unidad" },
+            onSelected = { unit = it },
+            error = error[1],
+            modifier = Modifier
+                .width(150.dp)
+                .focusRequester(unitFocus)
+                .bringIntoViewRequester(bringIntoViewRequester)
+                .onFocusEvent { state ->
+                    if (state.isFocused) {
+                        scope.launch {
+                            delay(250)
+                            bringIntoViewRequester.bringIntoView()
+                        }
+                    }
+                }
+        )
+    }
+
+    AnimatedVisibility(
+        visible = error.any { it != null },
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        Column(modifier = Modifier.padding(start = 6.dp)) {
+            if (error[0] != null) {
+                Text(
+                    text = error[0] ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
+                )
+            }
+            if (error[1] != null) {
+                Text(
+                    text = error[1] ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+
+    return unit
 }
 
 @Composable
@@ -438,6 +580,9 @@ fun FormTextField(
                     focusedTrailingIconColor = PompAndPower,
                     unfocusedTrailingIconColor = SweetGrey,
                     unfocusedPlaceholderColor = Color.Gray,
+                    errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+                    errorBorderColor = MaterialTheme.colorScheme.error,
+                    errorPlaceholderColor = MaterialTheme.colorScheme.error
                 ),
             )
 
@@ -501,6 +646,8 @@ fun FormTextField(
         focusedTrailingIconColor = PompAndPower,
         unfocusedTrailingIconColor = SweetGrey,
         unfocusedPlaceholderColor = Color.Gray,
+        errorContainerColor = White,
+        errorBorderColor = MaterialTheme.colorScheme.error
     )
     val context = LocalContext.current
 
@@ -1076,10 +1223,64 @@ fun FormTextField(
                         onNext = { onNext?.invoke() },
                         onDone = { onDone?.invoke() }
                     ),
-                    maxLines = 5,
-                    minLines = 3,
+                    singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     colors = colors,
+                )
+            }
+
+            ContentType.PersonMiddleName -> {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { newText ->
+                        if (newText.all { it.isLetter() }) {
+                            if (newText.length > 15) {
+                                Toast.makeText(context, "Máximo 15 caracteres", Toast.LENGTH_SHORT)
+                                    .show()
+                                return@OutlinedTextField
+                            }
+                            onValueChange(newText.replaceFirstChar { it.uppercase() })
+                        } else
+                            Toast.makeText(context, "Solo letras", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 66.dp)
+                        .focusRequester(focusRequester)
+                        .bringIntoViewRequester(bringIntoViewRequester)
+                        .onFocusEvent { state ->
+                            if (state.isFocused) {
+                                scope.launch {
+                                    delay(250)
+                                    bringIntoViewRequester.bringIntoView()
+                                    scrollState?.animateScrollBy(150f)
+                                }
+                            }
+                        },
+                    placeholder = { Text(placeholder, fontSize = 14.sp) },
+                    isError = error != null,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = imeAction
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { onNext?.invoke() },
+                        onDone = { onDone?.invoke() }
+                    ),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedBorderColor = PompAndPower,
+                        unfocusedPlaceholderColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+                        errorBorderColor = MaterialTheme.colorScheme.error,
+                        errorPlaceholderColor = MaterialTheme.colorScheme.error
+                    ),
                 )
             }
 
@@ -1156,6 +1357,7 @@ fun FormTextField(
                 fontSize = 12.sp
             )
         }
+
         Spacer(Modifier.height(6.dp))
     }
 }
