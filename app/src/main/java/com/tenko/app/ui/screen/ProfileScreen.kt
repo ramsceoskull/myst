@@ -139,12 +139,12 @@ fun ProfileScreen(
                 onClick = { navController.navigate(AppScreens.ClinicalHistoryScreen.route) }
             )
             ActionCard(
-                icon = R.drawable.square_poll_horizontal_solid_full,
+                icon = R.drawable.flask_vial_solid_full,
                 title = "Estudios de laboratorio",
                 onClick = { navController.navigate(AppScreens.LaboratoryStudiesScreen.route) }
             )
             ActionCard(
-                icon = R.drawable.gear_solid_full,
+                icon = R.drawable.user_gear_solid_full,
                 title = "Editar Perfil",
                 onClick = { navController.navigate(AppScreens.UpdateProfileScreen.route) }
             )
