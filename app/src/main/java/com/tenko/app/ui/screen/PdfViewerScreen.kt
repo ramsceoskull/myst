@@ -35,8 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenko.app.data.pdf.getPdfUriFromRaw
-import com.tenko.app.data.pdf.loadPdfPages
+import com.tenko.app.data.utils.getPdfUriFromRaw
+import com.tenko.app.data.utils.loadPdfPages
 
 @Composable
 fun PdfViewerScreen(
