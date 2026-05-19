@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -95,8 +96,10 @@ import com.tenko.app.ui.components.DatePickerField
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TimePickerDialogDefaults
 import com.tenko.app.ui.components.DropdownField
+import com.tenko.app.ui.components.FloatingActionButton
 import com.tenko.app.ui.components.FormTextField
 import com.tenko.app.ui.components.SquaredOptionSelector
+import com.tenko.app.ui.components.inputField
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
 import com.tenko.app.ui.theme.PompAndPower
@@ -164,6 +167,8 @@ fun AddMedicationScreen(navController: NavController, viewModel: MedicineViewMod
     var reminderTime by remember { mutableStateOf("") }
     var afterMeal by remember { mutableStateOf("") }
     var afterMealBoolean by remember { mutableStateOf(false) }
+    var dosage by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("") }
     val hour = timePickerState.hour
     val minute = timePickerState.minute
     var startDate by remember {
@@ -191,9 +196,11 @@ fun AddMedicationScreen(navController: NavController, viewModel: MedicineViewMod
     val dosageFocus = remember { FocusRequester() }
 
     var nameError by remember { mutableStateOf<String?>(null) }
+    var dosageError by remember { mutableStateOf<String?>(null) }
+    var unitError by remember { mutableStateOf<String?>(null) }
     var dateError by remember { mutableStateOf<String?>(null) }
     var timeError by remember { mutableStateOf<String?>(null) }
-    var dosageError by remember { mutableStateOf<String?>(null) }
+    var afterMealError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -202,80 +209,80 @@ fun AddMedicationScreen(navController: NavController, viewModel: MedicineViewMod
                 onBackClick = { navController.popBackStack() }
             ) {}
         },
-        bottomBar = {
-            BottomBar(
-                text = "Guardar recordatorio",
-                onClick = {
-                    if (name.isEmpty() || reminderDate == null || reminderTime.isEmpty() || afterMeal.isEmpty()) {
-//                        if (name.isEmpty()) nameError = "El nombre del medicamento es requerido"
-                        if (reminderDate == null) dateError =
-                            "La fecha de recordatorio es requerida"
-                        if (reminderTime.isEmpty()) timeError =
-                            "La hora de recordatorio es requerida"
-                        if (afterMeal.isEmpty()) dosageError =
-                            "Selecciona una opción de alimentación"
-                        Toast.makeText(
-                            context,
-                            "Por favor completa todos los campos requeridos",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@BottomBar
-                    }
-
-                    val timeParts = reminderTime.split(":")
-                    val hour = timeParts[0].toInt()
-                    val minute = timeParts[1].toInt()
-
-                    val localDateTime = reminderDate!!
-                        .atTime(hour, minute)
-
-                    val triggerAtMillis = localDateTime
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-
-                    if (triggerAtMillis <= System.currentTimeMillis()) {
-                        Toast.makeText(
-                            context,
-                            "Selecciona una fecha y hora futuras",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@BottomBar
-                    }
-
-                    val newMedication = ReminderCreate(
-                        title = name,
-                        start_date = reminderDate!!,
-                        day_time = reminderTime.takeIf { it.isNotEmpty() }?.let { time ->
-                            val parts = time.split(":")
-                            if (parts.size == 2) {
-                                val hour = parts[0].toIntOrNull() ?: 0
-                                val minute = parts[1].toIntOrNull() ?: 0
-                                Instant.now().atZone(ZoneId.systemDefault())
-                                    .withHour(hour)
-                                    .withMinute(minute)
-                                    .toLocalTime()
-                            } else null
-                        },
-                        type = true,
-                        after_meal = afterMealBoolean,
-                    )
-                    viewModel.saveMedication(newMedication, navController)
-
-                    scheduleMedicationAlarm(
-                        context = context,
-                        medicationName = name,
-                        endDate = reminderDate!!,
-                        time = newMedication.day_time!!
-                    )
+        floatingActionButton = {
+            FloatingActionButton(R.drawable.floppy_disk_solid_full) {
+                if (name.isEmpty() || reminderDate == null || reminderTime.isEmpty() || afterMeal.isEmpty()) {
+                    if (name.isEmpty()) nameError = "El nombre del medicamento es requerido"
+                    if (reminderDate == null) dateError =
+                        "La fecha de recordatorio es requerida"
+                    if (reminderTime.isEmpty()) timeError =
+                        "La hora de recordatorio es requerida"
+                    if (afterMeal.isEmpty()) afterMealError =
+                        "Selecciona una opción de alimentación"
+                    if (dosage.isEmpty()) dosageError = "La cantidad es requerida"
+                    if (unit.isEmpty()) unitError = "El tipo es requerido"
+                    Toast.makeText(
+                        context,
+                        "Por favor completa todos los campos requeridos",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@FloatingActionButton
                 }
-            )
+
+                val timeParts = reminderTime.split(":")
+                val hour = timeParts[0].toInt()
+                val minute = timeParts[1].toInt()
+
+                val localDateTime = reminderDate!!
+                    .atTime(hour, minute)
+
+                val triggerAtMillis = localDateTime
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+
+                if (triggerAtMillis <= System.currentTimeMillis()) {
+                    Toast.makeText(
+                        context,
+                        "Selecciona una fecha y hora futuras",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@FloatingActionButton
+                }
+
+                val newMedication = ReminderCreate(
+                    title = name,
+                    start_date = reminderDate!!,
+                    day_time = reminderTime.takeIf { it.isNotEmpty() }?.let { time ->
+                        val parts = time.split(":")
+                        if (parts.size == 2) {
+                            val hour = parts[0].toIntOrNull() ?: 0
+                            val minute = parts[1].toIntOrNull() ?: 0
+                            Instant.now().atZone(ZoneId.systemDefault())
+                                .withHour(hour)
+                                .withMinute(minute)
+                                .toLocalTime()
+                        } else null
+                    },
+                    type = true,
+                    after_meal = afterMealBoolean,
+                )
+                viewModel.saveMedication(newMedication, navController)
+
+                scheduleMedicationAlarm(
+                    context = context,
+                    medicationName = name,
+                    endDate = reminderDate!!,
+                    time = newMedication.day_time!!
+                )
+            }
         },
         containerColor = BackgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .verticalScroll(scrollState)
                 .padding(paddingValues)
                 .padding(horizontal = 25.dp)
@@ -314,6 +321,43 @@ fun AddMedicationScreen(navController: NavController, viewModel: MedicineViewMod
                     showDateDialog = true
                 },
             )
+
+            val plural = (dosage.toIntOrNull() ?: 0) > 1
+            val singularList = listOf("Píldora", "Inyección", "Mg", "Ml")
+            val pluralList = listOf("Píldoras", "Inyecciones", "Mg", "Ml")
+            val aux = inputField(
+                value = dosage,
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() }) {
+                        unit = if ((it.toIntOrNull() ?: 0) > 1) {
+                            if (unit in singularList) {
+                                pluralList[singularList.indexOf(unit)]
+                            } else unit
+                        } else {
+                            if (unit in pluralList) {
+                                singularList[pluralList.indexOf(unit)]
+                            } else unit
+                        }
+                        dosage = it
+                        dosageError = null
+                    } else {
+                        dosageError = "Solo se permiten números"
+                    }
+                },
+                label = Pair("Cantidad", "Tipo"),
+                placeholder = "Digite cantidad",
+                options = if (unit in singularList) pluralList else singularList,
+                error = listOf(dosageError, unitError),
+                focusRequester = dosageFocus,
+                imeAction = ImeAction.Next,
+                scrollState = scrollState,
+                scope = scope,
+                onNext = { keyboardController?.hide() }
+            )
+            if (aux.isNotEmpty()) {
+                unit = aux
+                unitError = null
+            }
 
             Text(
                 text = "¿Hasta cuándo necesitas tomar el medicamento?",
@@ -430,38 +474,8 @@ fun AddMedicationScreen(navController: NavController, viewModel: MedicineViewMod
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            /*
-        // Dosage & Duration
-        Text("Dosis y duración", fontSize = 14.sp, color = Color.Gray)
-        Text(
-            text = "¿Cuánto medicamento debes aplicar? & ¿De qué tipo es?",
-            fontSize = 12.sp,
-            color = Color.LightGray
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val plural = state.value.dosage!! > "1"
-            OutlinedTextField(
-                value = state.value.dosage!!,
-                onValueChange = { newValue ->
-                    if(newValue.all { it.isDigit() }) {
-                        viewModel.onDosageChange(newValue)
-                    }
-                },
-                placeholder = { Text("Digite cantidad") },
-                shape = RoundedCornerShape(12.dp),
-                colors = colors,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
-            )
-            *//*DropdownField(
-                    options = if(plural) listOf("Píldoras", "Inyecciones", "Mg", "Ml") else listOf("Píldora", "Inyección", "Mg", "Ml"),
-                    selected = state.value.unit.ifEmpty { "Tipo" },
-                    onSelected = { viewModel.onUnitChange(it) },
-                    modifier = Modifier.weight(1f)
-                )*//*
-            }
-            }*/
+
+            Spacer(modifier = Modifier.height(30.dp))
         }
 
         if (showDateDialog) {
