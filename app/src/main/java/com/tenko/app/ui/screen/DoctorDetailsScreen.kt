@@ -1,5 +1,8 @@
 package com.tenko.app.ui.screen
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tenko.app.R
+import com.tenko.app.data.notifications.NotificationPermissionHelper
 import com.tenko.app.data.serializable.ContactResponse
 import com.tenko.app.data.view.DoctorViewModel
 import com.tenko.app.navigation.AppScreens
@@ -79,6 +84,20 @@ fun DoctorDetailsScreen(
     var showDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(
+                context,
+                "Necesitamos permiso de notificaciones para usar esta función",
+                Toast.LENGTH_LONG
+            ).show()
+        } else
+            navController.navigate(AppScreens.AddMedicationScreen.route)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -90,7 +109,11 @@ fun DoctorDetailsScreen(
             },
             floatingActionButton = {
                 FloatingActionButton(R.drawable.calendar_solid_full) {
-                    navController.navigate(AppScreens.AddAppointmentScreen.createRoute(doctor.id_contact))
+                    if (NotificationPermissionHelper.hasNotificationPermission(context))
+                        navController.navigate(AppScreens.AddAppointmentScreen.createRoute(doctor.id_contact))
+                    else
+                        NotificationPermissionHelper
+                            .requestNotificationPermission(notificationPermissionLauncher)
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
