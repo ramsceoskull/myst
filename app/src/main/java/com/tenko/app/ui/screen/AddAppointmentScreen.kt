@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -76,6 +77,7 @@ import com.tenko.app.data.view.DoctorViewModel
 import com.tenko.app.ui.components.AppTopBar
 import com.tenko.app.ui.components.BottomBar
 import com.tenko.app.ui.components.DatePickerField
+import com.tenko.app.ui.components.FloatingActionButton
 import com.tenko.app.ui.components.FormTextField
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.BackgroundColor
@@ -219,23 +221,6 @@ fun AddAppointmentScreen(
         navController.popBackStack()
     }
 
-    val notificationPermissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { granted ->
-            val trigger = pendingTriggerAtMillis
-
-            if (granted && trigger != null) {
-                saveReminder(trigger)
-            } else {
-                Toast.makeText(
-                    context,
-                    "No se concedió el permiso para notificaciones",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -243,76 +228,59 @@ fun AddAppointmentScreen(
                 onBackClick = { navController.popBackStack() }
             ) {}
         },
-        bottomBar = {
-            BottomBar(
-                text = "Guardar recordatorio",
-                onClick = {
-                    if (title.isEmpty() || reminderDate == null || reminderTime.isEmpty()) {
-                        if (title.isEmpty()) nameError = "El asunto del recordatorio es requerido"
-                        dateError =
-                            if (reminderDate == null) "La fecha de recordatorio es requerida" else ""
-                        if (reminderTime.isEmpty()) timeError =
-                            "La hora de recordatorio es requerida"
+        floatingActionButton = {
+            FloatingActionButton(R.drawable.floppy_disk_solid_full) {
+                if (title.isEmpty() || reminderDate == null || reminderTime.isEmpty()) {
+                    if (title.isEmpty()) nameError = "El asunto del recordatorio es requerido"
+                    dateError =
+                        if (reminderDate == null) "La fecha de recordatorio es requerida" else ""
+                    if (reminderTime.isEmpty()) timeError =
+                        "La hora de recordatorio es requerida"
 
-                        Toast.makeText(
-                            context,
-                            "Por favor completa todos los campos requeridos",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    Toast.makeText(
+                        context,
+                        "Por favor completa todos los campos requeridos",
+                        Toast.LENGTH_SHORT
+                    ).show()
 
-                        return@BottomBar
-                    }
-
-                    val timeParts = reminderTime.split(":")
-                    val hour = timeParts[0].toInt()
-                    val minute = timeParts[1].toInt()
-
-                    val localDateTime = reminderDate!!
-                        .atTime(hour, minute)
-
-                    val appointmentMillis = localDateTime
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-
-                    val triggerAtMillis = appointmentMillis - (2 * 60 * 60 * 1000L)
-
-                    if (triggerAtMillis <= System.currentTimeMillis()) {
-                        Toast.makeText(
-                            context,
-                            "La cita debe programarse con al menos 2 horas de anticipación",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        return@BottomBar
-                    }
-
-                    pendingTriggerAtMillis = triggerAtMillis
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        val hasPermission = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) == PackageManager.PERMISSION_GRANTED
-
-                        if (hasPermission) {
-                            saveReminder(triggerAtMillis)
-                        } else {
-                            notificationPermissionLauncher.launch(
-                                Manifest.permission.POST_NOTIFICATIONS
-                            )
-                        }
-                    } else {
-                        saveReminder(triggerAtMillis)
-                    }
+                    return@FloatingActionButton
                 }
-            )
+
+                val timeParts = reminderTime.split(":")
+                val hour = timeParts[0].toInt()
+                val minute = timeParts[1].toInt()
+
+                val localDateTime = reminderDate!!
+                    .atTime(hour, minute)
+
+                val appointmentMillis = localDateTime
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+
+                val triggerAtMillis = appointmentMillis - (2 * 60 * 60 * 1000L)
+
+                if (triggerAtMillis <= System.currentTimeMillis()) {
+                    Toast.makeText(
+                        context,
+                        "La cita debe programarse con al menos 2 horas de anticipación",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    return@FloatingActionButton
+                }
+
+                pendingTriggerAtMillis = triggerAtMillis
+
+                saveReminder(triggerAtMillis)
+            }
         },
         containerColor = BackgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .verticalScroll(scrollState)
                 .padding(paddingValues)
                 .padding(horizontal = 25.dp)
@@ -389,13 +357,18 @@ fun AddAppointmentScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (daysDifference!! >= 0) PompAndPower else MaterialTheme.colorScheme.error
+                        containerColor = if (daysDifference!! >= 0) PompAndPower else MaterialTheme.colorScheme.error,
+                        contentColor = White
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
+                    val text = when {
+                        daysDifference < 0 -> "La fecha seleccionada ya ha pasado. Por favor elige una fecha futura."
+                        daysDifference == 0L -> "Su recordatorio está programado para hoy."
+                        else -> "Su recordatorio está programado para dentro de: $daysDifference ${if (daysDifference.toInt() == 1) "día" else "días"}"
+                    }
                     Text(
-                        text = "Su recordatorio está programado para dentro de: $daysDifference ${if (daysDifference.toInt() == 1) "día" else "días"}",
-                        color = White,
+                        text = text,
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         modifier = Modifier
@@ -500,7 +473,7 @@ fun AddAppointmentScreen(
                 scope = scope,
             )
 
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(30.dp))
         }
 
         if (showDateDialog) {
