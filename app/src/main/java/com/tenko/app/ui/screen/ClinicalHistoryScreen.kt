@@ -69,6 +69,8 @@ import androidx.navigation.NavController
 import com.tenko.app.R
 import com.tenko.app.data.model.AnswerType
 import com.tenko.app.data.model.ClinicalQuestion
+import com.tenko.app.data.model.clinicalHistoryQuestions
+import com.tenko.app.data.serializable.ClinicalHistoryResponse
 import com.tenko.app.data.serializable.UserUpdate
 import com.tenko.app.data.view.AuthViewModel
 import com.tenko.app.data.view.ChatViewModel
@@ -82,8 +84,10 @@ import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
 import com.tenko.app.data.serializable.ClinicalHistoryUpdate
 import com.tenko.app.ui.components.AnswerSelector
+import com.tenko.app.ui.components.ClinicalInfoRow
 import com.tenko.app.ui.components.EmptyClinicalHistoryState
 import com.tenko.app.ui.components.EmptyStateFullscreen
+import com.tenko.app.ui.components.SectionTitle
 import com.tenko.app.ui.components.nameInput
 import com.tenko.app.ui.theme.RaisinBlack
 import com.tenko.app.ui.theme.SweetGrey
@@ -107,24 +111,8 @@ fun ClinicalHistoryScreen(
     // Observamos los datos del historial y el estado de carga
     val history by viewModel.historyData.collectAsState()
     val isRefreshing by viewModel.isLoading.collectAsState()
-    var showNameInput by remember { mutableStateOf(false) }
-    var showLastNameInput by remember { mutableStateOf(false) }
-    var showSecondLastNameInput by remember { mutableStateOf(false) }
-    var showDateDialog by remember { mutableStateOf(false) }
-    var showBinaryDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-
-    var newName by remember { mutableStateOf("") }
-    val initials by remember(newName) {
-        derivedStateOf {
-            newName
-                .split(" ")
-                .filter { it.isNotBlank() }
-                .map { it.first().uppercaseChar() }
-                .joinToString("")
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -132,7 +120,7 @@ fun ClinicalHistoryScreen(
                 AppTopBar(
                     title = "Historial Clínico",
                     onBackClick = { navController.popBackStack() }
-                ) {}
+                )
             }
         ) { paddingValues ->
             PullToRefreshBox(
@@ -160,692 +148,67 @@ fun ClinicalHistoryScreen(
                             .verticalScroll(rememberScrollState())
                     ) {
                         Spacer(modifier = Modifier.height(30.dp))
-//                SECCIÓN: Identificación
-                        SectionTitle("Identificación")
 
-                        InfoRow(
-                            label = "Nombre",
-                            value = authViewModel.currentUser?.name ?: "No registrado",
-                            onClick = { showNameInput = true }
-                        )
-                        AnimatedVisibility(
-                            visible = showNameInput,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
+                        TextButton(
+                            onClick = { navController.navigate(AppScreens.ChatScreen.route) },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            colors = ButtonDefaults.textButtonColors(contentColor = Tekhelet)
                         ) {
-                            Column {
-                                newName =
-                                    nameInput(true, authViewModel.currentUser?.name ?: "").first
-
-                                Row {
-                                    TextButton(onClick = { showNameInput = false }) {
-                                        Text("Cancelar", color = Color.Gray)
-                                    }
-                                    TextButton(
-                                        onClick = {
-                                            if (newName.isNotBlank()) {
-                                                authViewModel.updateUser(
-                                                    updateData = UserUpdate(
-                                                        name = newName, initials =
-                                                            if (initials.length == 2) initials
-                                                            else newName.take(2).uppercase()
-                                                    ),
-                                                    context = context
-                                                ) {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Nombre actualizado",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                    authViewModel.getUser(navController)
-                                                }
-                                                showNameInput = false
-                                            } else
-                                                Toast.makeText(
-                                                    context,
-                                                    "El nombre no puede estar vacío",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.textButtonColors(
-                                            contentColor = White,
-                                            containerColor = Tekhelet
-                                        ),
-                                        content = { Text("Cambiar nombre") }
-                                    )
-                                }
-                            }
+                            Text("Actualizar historial clínico via chat")
                         }
 
-                        InfoRow(
-                            label = "Apellido paterno",
-                            value = history?.last_name ?: "No registrado",
-                            onClick = { showLastNameInput = true }
-                        )
-                        AnimatedVisibility(
-                            visible = showLastNameInput,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column {
-                                newName = nameInput(false, history?.last_name ?: "").first
-
-                                Row {
-                                    TextButton(onClick = { showLastNameInput = false }) {
-                                        Text("Cancelar", color = Color.Gray)
-                                    }
-                                    TextButton(
-                                        onClick = {
-                                            if (newName.isNotBlank()) {
-                                                scope.launch {
-                                                    viewModel.updateSingleField(
-                                                        "last_name",
-                                                        newName,
-                                                        navController
-                                                    )
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Apellido actualizado",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                    viewModel.fetchMyHistory()
-                                                }
-                                                showLastNameInput = false
-                                            } else
-                                                Toast.makeText(
-                                                    context,
-                                                    "El apellido no puede estar vacío",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.textButtonColors(
-                                            contentColor = White,
-                                            containerColor = Tekhelet
-                                        ),
-                                        content = { Text("Cambiar apellido") }
+                        clinicalHistoryQuestions.forEach { question ->
+                            ClinicalInfoRow(
+                                question = question,
+                                value = getCurrentValue(question.id, history),
+                                onUpdate = { answer ->
+                                    viewModel.updateSingleField(
+                                        question.id,
+                                        answer,
+                                        navController
                                     )
-                                }
-                            }
-                        }
 
-                        InfoRow(
-                            label = "Apellido materno",
-                            value = history?.second_last_name ?: "No registrado",
-                            onClick = { showSecondLastNameInput = true }
-                        )
-                        AnimatedVisibility(
-                            visible = showSecondLastNameInput,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column {
-                                newName = nameInput(false, history?.second_last_name ?: "").first
-
-                                Row {
-                                    TextButton(onClick = { showSecondLastNameInput = false }) {
-                                        Text("Cancelar", color = Color.Gray)
-                                    }
-                                    TextButton(
-                                        onClick = {
-                                            if (newName.isNotBlank()) {
-                                                scope.launch {
-                                                    viewModel.updateSingleField(
-                                                        "second_last_name",
-                                                        newName,
-                                                        navController
-                                                    )
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Apellido actualizado",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                    viewModel.fetchMyHistory()
-                                                }
-                                                showSecondLastNameInput = false
-                                            } else
-                                                Toast.makeText(
-                                                    context,
-                                                    "El apellido no puede estar vacío",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.textButtonColors(
-                                            contentColor = White,
-                                            containerColor = Tekhelet
-                                        ),
-                                        content = { Text("Cambiar apellido") }
-                                    )
-                                }
-                            }
-                        }
-
-                        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                        var birthDate by remember { mutableStateOf<LocalDate?>(null) }
-
-                        val zoneId = ZoneId.systemDefault()
-                        val today = LocalDate.now()
-                        val state = rememberDatePickerState(
-                            selectableDates = object : SelectableDates {
-                                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    val selectedDate = Instant
-                                        .ofEpochMilli(utcTimeMillis)
-                                        .atZone(zoneId)
-                                        .toLocalDate()
-                                    return selectedDate.isBefore(today)
-                                }
-
-                                override fun isSelectableYear(year: Int): Boolean {
-                                    return year <= today.year
-                                }
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Fecha de nacimiento",
-                            /*value = history?.birthdate.toString().let {
-                                "${history?.birthdate?.dayOfMonth.toString().padStart(2, '0')}-${
-                                    history?.birthdate?.monthValue.toString().padStart(2, '0')
-                                }-${history?.birthdate?.year}"
-                            },*/
-                            value = if (history?.birthdate != null) {
-                                try {
-                                    LocalDate.parse(history!!.birthdate.toString(), formatter)
-                                        .format(formatter)
-                                } catch (e: Exception) {
-                                    "Formato no válido"
-                                }
-                            } else "No registrado",
-                            onClick = { showDateDialog = true }
-                        )
-                        if (showDateDialog) {
-                            DatePickerDialog(
-                                onDismissRequest = { showDateDialog = false },
-                                dismissButton = {
-                                    Button(
-                                        onClick = { showDateDialog = false },
-                                        content = { Text("Cancelar") },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Transparent,
-                                            contentColor = Color.Gray
-                                        )
-                                    )
-                                },
-                                confirmButton = {
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                birthDate =
-                                                    state.selectedDateMillis?.let { millis ->
-                                                        LocalDate.ofEpochDay(millis / (24 * 60 * 60 * 1000))
-                                                    }
-                                                viewModel.updateSingleField(
-                                                    "birthdate",
-                                                    birthDate?.format(formatter) ?: "",
-                                                    navController
-                                                )
-                                                Toast.makeText(
-                                                    context,
-                                                    "Fecha de nacimiento actualizada",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                                delay(2000)
-                                            }
-
-                                            viewModel.fetchMyHistory()
-                                            showDateDialog = false
-                                        },
-                                        content = { Text("Aceptar") },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = PompAndPower,
-                                            contentColor = White
-                                        ),
-                                        shape = RoundedCornerShape(12.dp),
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = DatePickerDefaults.colors(containerColor = White),
-                                content = {
-                                    DatePicker(
-                                        state = state,
-                                        showModeToggle = false,
-                                        colors = DatePickerDefaults.colors(
-                                            containerColor = White,
-                                            titleContentColor = SweetGrey,
-                                            headlineContentColor = PompAndPower,
-                                            weekdayContentColor = Color.DarkGray,
-                                            navigationContentColor = Color.DarkGray,
-                                            yearContentColor = Color.DarkGray,
-                                            currentYearContentColor = Tekhelet,
-                                            selectedYearContentColor = White,
-                                            disabledSelectedYearContentColor = Color.LightGray,
-                                            selectedYearContainerColor = PompAndPower,
-                                            dayContentColor = Color.DarkGray,
-                                            disabledDayContentColor = Color.LightGray,
-                                            selectedDayContentColor = White,
-                                            selectedDayContainerColor = PompAndPower,
-                                            todayContentColor = Tekhelet,
-                                            todayDateBorderColor = Tekhelet,
-                                            dividerColor = SweetGrey,
-                                        )
-                                    )
+                                    Toast.makeText(
+                                        context,
+                                        "${question.id} actualizado",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             )
                         }
 
-                        InfoRow(
-                            label = "Sexo biológico",
-                            value = when (history?.sex_biology) {
-                                "femenine" -> "Femenino"
-                                "masculine" -> "Masculino"
-                                else -> "No registrado"
-                            },
-                            onClick = { showBinaryDialog = true }
+                        Text(
+                            text = "Nota: Algunos campos como el sexo biológico pueden afectar las recomendaciones que recibes, por lo que es importante mantenerlos actualizados.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
-                        AnimatedVisibility(
-                            visible = showBinaryDialog,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column {
-                                AnswerSelector(
-                                    ClinicalQuestion(
-                                        "",
-                                        "",
-                                        AnswerType.SingleChoice(
-                                            options = mapOf(
-                                                "femenine" to "Femenino",
-                                                "masculine" to "Masculino"
-                                            )
-                                        )
-                                    ), { answer ->
-                                        viewModel.updateSingleField(
-                                            "sex_biology",
-                                            when (answer) {
-                                                "Femenino" -> "femenine"
-                                                "Masculino" -> "masculine"
-                                                else -> null
-                                            },
-                                            navController
-                                        )
-                                        Toast.makeText(
-                                            context,
-                                            "Sexo biológico actualizado",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        showBinaryDialog = false
-                                    }
-                                )
-                                TextButton(onClick = { showBinaryDialog = false }) {
-                                    Text("Cancelar", color = Color.Gray)
+
+                        /*val question = clinicalHistoryQuestions.first { it.id == "sex_biology" }
+                        ClinicalInfoRow(
+                            question = question,
+                            value = history?.sex_biology.orEmpty(),
+                            onUpdate = { answer ->
+                                val mappedValue = when (answer) {
+                                    "Femenino" -> "femenine"
+                                    "Masculino" -> "masculine"
+                                    else -> null
                                 }
-                            }
-                        }
 
-//                SECCIÓN: Identidad y Biología
-                        SectionTitle("Información General")
-
-                        InfoRow(
-                            label = "Sexo legal",
-                            value = when (history?.sex_legally) {
-                                "femenine" -> "Femenino"
-                                "masculine" -> "Masculino"
-                                else -> "No registrado"
-                            },
-                            onClick = { /* Diálogo de selección */ }
-                        )
-
-                        InfoRow(
-                            label = "¿Es activ@ sexualmente?",
-                            value = when (history?.sexually_active) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
                                 viewModel.updateSingleField(
-                                    "sexually_active",
-                                    !(history?.sexually_active ?: false),
+                                    "sex_biology",
+                                    mappedValue,
                                     navController
                                 )
+
+                                Toast.makeText(
+                                    context,
+                                    "Sexo biológico actualizado",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        )
+                        )*/
 
-                        InfoRow(
-                            label = "¿Ha tenido abortos?",
-                            value = when (history?.miscarriages_abortions) {
-                                null -> "No registrado"
-                                0 -> "No"
-                                else -> "${history?.miscarriages_abortions}"
-                            },
-                            onClick = { /* Diálogo para ingresar número */ }
-                        )
-
-//                SECCIÓN: Condiciones Médicas
-                        SectionTitle("Antecedentes clínicos")
-
-                        InfoRow(
-                            label = "¿Ha sido diagnosticad@ con diabetes?",
-                            value = when (history?.diabetes_mellitus) {
-                                "none" -> "Ninguna"
-                                "type_1" -> "Tipo 1"
-                                "type_2" -> "Tipo 2"
-                                "gestational" -> "Gestacional"
-                                "prediabetes" -> "Prediabetes"
-                                else -> "No registrado"
-                            },
-                            onClick = { /* Diálogo de opciones */ }
-                        )
-
-                        InfoRow(
-                            label = "¿Tiene presión alta (hipertensión)?",
-                            value = when (history?.arterial_hypertension) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "arterial_hypertension",
-                                    !(history?.arterial_hypertension ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "¿Ha tenido o tiene algún diagnóstico de depresión?",
-                            value = when (history?.depression) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "depression",
-                                    !(history?.depression ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        // Ejemplo de edición directa con la función dinámica que creamos
-                        InfoRow(
-                            label = "¿Le han diagnosticado síndrome de ovario poliquístico (PCOS)?",
-                            value = when (history?.pcos) {
-                                true -> "Sí"
-                                false -> "No"
-                                else -> "No registrado"
-                            },
-                            onClick = {
-                                // Diálogo rápido de cambio
-                                viewModel.updateSingleField(
-                                    "pcos",
-                                    !(history?.pcos ?: false),
-                                    navController
-                                )
-                                Toast.makeText(context, "Dato actualizado", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        )
-
-                        InfoRow(
-                            label = "¿Tiene endometriosis?",
-                            value = when (history?.endometriosis) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "endometriosis",
-                                    !(history?.endometriosis ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "¿Ha tenido alguna infección o enfermedad de transmisión sexual (ETS)?",
-                            value = if (history?.std.isNullOrEmpty()) "No registrado" else if (history?.std == listOf(
-                                    "none"
-                                )
-                            ) "No" else "Sí",
-                            onClick = { /* Diálogo de selección múltiple */ }
-                        )
-
-                        InfoRow(
-                            label = "¿Presenta alteraciones de memoria?",
-                            value = when (history?.memory_alterations) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "memory_alterations",
-                                    !(history?.memory_alterations ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "¿Tiene diagnóstico o riesgo de demencia?",
-                            value = when (history?.dementia) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "dementia",
-                                    !(history?.dementia ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "¿Padece incontinencia urinaria?",
-                            value = when (history?.urinary_incontinence) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "urinary_incontinence",
-                                    !(history?.urinary_incontinence ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-//                SECCIÓN: Hábitos
-                        SectionTitle("Hábitos de consumo")
-
-                        InfoRow(
-                            label = "Sustancias",
-                            value =
-                                if (history?.sustance_use.isNullOrEmpty()) "No registrado"
-                                else if (history?.sustance_use == listOf("none")) "No" else "Sí",
-                            onClick = { /* Diálogo de selección múltiple */ }
-                        )
-
-//                SECCIÓN: Ciclo menstrual
-                        SectionTitle("Información del ciclo menstrual")
-
-                        InfoRow(
-                            label = "Promedio ciclo (días)",
-                            value = history?.average_menstrual_cycle?.toString() ?: "No registrado",
-                            onClick = { /* Diálogo para ingresar número */ }
-                        )
-
-                        InfoRow(
-                            label = "¿Tiene ciclos menstruales regulares?",
-                            value = history?.regularity ?: "No registrado",
-                            onClick = {
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Ciclo actual",
-                            value = history?.last_period_date?.toString() ?: "No registrado",
-                            onClick = { /* Diálogo para ingresar número */ }
-                        )
-
-//                SECCIÓN: Riesgos y Screenings
-                        SectionTitle("Mis señales de alerta (screening)")
-
-                        InfoRow(
-                            label = "Depresión",
-                            value = when (history?.depression_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "depression_screening",
-                                    !(history?.depression_screening ?: false),
-                                    navController
-                                )
-                                Toast.makeText(context, "Dato actualizado", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Alteraciones de memoria",
-                            value = when (history?.memory_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "memory_screening",
-                                    !(history?.memory_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Incontinencia urinaria",
-                            value = when (history?.urinary_incontinence_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "urinary_incontinence_screening",
-                                    !(history?.urinary_incontinence_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Anemia",
-                            value = when (history?.anemia_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "anemia_screening",
-                                    !(history?.anemia_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Obesidad",
-                            value = when (history?.obesity_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "obesity_screening",
-                                    !(history?.obesity_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Osteoporosis",
-                            value = when (history?.osteoporosis_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "osteoporosis_screening",
-                                    !(history?.osteoporosis_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Sindrome de Turner",
-                            value = when (history?.turner_syndrome_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "turner_syndrome_screening",
-                                    !(history?.turner_syndrome_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Endometriosis",
-                            value = when (history?.endometriosis_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "endometriosis_screening",
-                                    !(history?.endometriosis_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = "Síndrome de Ovario Poliquístico",
-                            value = when (history?.pcos_screening) {
-                                null -> "No registrado"
-                                true -> "Sí"
-                                false -> "No"
-                            },
-                            onClick = {
-                                viewModel.updateSingleField(
-                                    "pcos_screening",
-                                    !(history?.pcos_screening ?: false),
-                                    navController
-                                )
-                            }
-                        )
 
                         Spacer(modifier = Modifier.height(30.dp))
                     }
@@ -859,12 +222,191 @@ fun ClinicalHistoryScreen(
     }
 }
 
-@Composable
-fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
-        style = MaterialTheme.typography.labelLarge,
-        color = Tekhelet
-    )
+private fun getCurrentValue(fieldId: String, history: ClinicalHistoryResponse?): String {
+    return when (fieldId) {
+        "last_name" -> history?.last_name.orEmpty()
+        "second_last_name" -> history?.second_last_name.orEmpty()
+        "birthdate" -> history?.birthdate?.toString().orEmpty()
+        "sex_biology" -> when (history?.sex_biology) {
+            "femenine" -> "Femenino"
+            "masculine" -> "Masculino"
+            else -> "No registrado"
+        }
+
+        "sex_legally" -> when (history?.sex_legally) {
+            "femenine" -> "Femenino"
+            "masculine" -> "Masculino"
+            else -> "No registrado"
+        }
+
+        "depression_screening" -> when (history?.depression_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "depression" -> when (history?.depression) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "memory_screening" -> when (history?.memory_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "memory_alterations" -> when (history?.memory_alterations) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "dementia" -> when (history?.dementia) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "urinary_incontinence_screening" -> when (history?.urinary_incontinence_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "urinary_incontinence" -> when (history?.urinary_incontinence) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "anemia_screening" -> when (history?.anemia_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "obesity_screening" -> when (history?.obesity_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "osteoporosis_screening" -> when (history?.osteoporosis_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "diabetes_mellitus" -> when (history?.diabetes_mellitus) {
+            "none" -> "Ninguna"
+            "type_1" -> "Tipo 1"
+            "type_2" -> "Tipo 2"
+            "gestational" -> "Gestacional"
+            "prediabetes" -> "Prediabetes"
+            else -> "No registrado"
+        }
+
+        "arterial_hypertension" -> when (history?.arterial_hypertension) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "sustance_use" -> when (history?.sustance_use) {
+            null -> ""
+            listOf("none") -> "No"
+            else -> "Sí"
+        }
+
+        "std" -> when (history?.std) {
+            null -> ""
+            listOf("none") -> "No"
+            else -> "Sí"
+        }
+
+        "turner_syndrome_screening" -> when (history?.turner_syndrome_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "endometriosis_screening" -> when (history?.endometriosis_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "endometriosis" -> when (history?.endometriosis) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "pcos_screening" -> when (history?.pcos_screening) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "pcos" -> when (history?.pcos) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "sexually_active" -> when (history?.sexually_active) {
+            null -> ""
+            true -> "Sí"
+            false -> "No"
+        }
+
+        "average_menstrual_cycle" -> history?.average_menstrual_cycle?.toString().orEmpty()
+        "average_ovulation" -> history?.average_ovulation?.toString().orEmpty()
+        "last_period_date" -> history?.last_period_date?.toString().orEmpty()
+        "regularity" -> history?.regularity.orEmpty()
+        "miscarriages_abortions" -> history?.miscarriages_abortions?.toString().orEmpty()
+        else -> ""
+    }
+}
+
+private fun mapValueToBackend(fieldId: String, displayValue: String): Any? {
+    return when (fieldId) {
+        // Campos de texto directo o números (si tu backend los acepta como String)
+        "last_name", "second_last_name", "birthdate", "regularity",
+        "average_menstrual_cycle", "average_ovulation", "last_period_date", "miscarriages_abortions" -> {
+            displayValue.ifBlank { null }
+        }
+
+        // Campos de Selección de Sexo
+        "sex_biology", "sex_legally" -> when (displayValue) {
+            "Femenino" -> "femenine"
+            "Masculino" -> "masculine"
+            else -> null
+        }
+
+        // Campos de Diabetes Mellitus
+        "diabetes_mellitus" -> when (displayValue) {
+            "Ninguna" -> "none"
+            "Tipo 1" -> "type_1"
+            "Tipo 2" -> "type_2"
+            "Gestacional" -> "gestational"
+            "Prediabetes" -> "prediabetes"
+            else -> "none"
+        }
+
+        // Campos de tipo Lista (Sustancias y ETS)
+        "sustance_use", "std" -> {
+            if (displayValue == "No" || displayValue.isBlank()) listOf("none") else listOf("detected")
+            // Nota: Ajusta "detected" por el string que maneje tu backend si es "Sí"
+        }
+
+        // Todos los campos Booleanos (Mapeo genérico)
+        else -> when (displayValue) {
+            "Sí" -> true
+            "No" -> false
+            else -> null
+        }
+    }
 }
