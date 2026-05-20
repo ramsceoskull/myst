@@ -11,6 +11,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tenko.app.R
+import com.tenko.app.data.model.ClinicalQuestion
 import com.tenko.app.ui.theme.AntiFlashWhite
 import com.tenko.app.ui.theme.RaisinBlack
 
@@ -25,6 +30,7 @@ import com.tenko.app.ui.theme.RaisinBlack
 fun InfoRow(
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     showInput: Boolean = false,
     onClick: (() -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
@@ -73,7 +79,6 @@ fun InfoRow(
             visible = showInput,
             onCancel = onCancel ?: {},
             onDone = onDone ?: {},
-            label = label,
             input = input
         )
 
@@ -106,6 +111,41 @@ fun DeleteAccountRow(label: String, onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.error
         )
     }
+}
+
+@Composable
+fun ClinicalInfoRow(
+    question: ClinicalQuestion,
+    value: String,
+    onUpdate: (Any?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showInput by remember { mutableStateOf(false) }
+    var localValue by remember { mutableStateOf(value) }
+
+    println("DEBUG: question=${question.label}, value=$value")
+
+    InfoRow(
+        label = question.label,
+        value = value.ifBlank { "No registrado" },
+        showInput = showInput,
+//        onClick = { showInput = !showInput },
+        onCancel = { showInput = false },
+        onDone = {
+            onUpdate(localValue)
+            showInput = false
+        },
+        input = {
+            ClinicalQuestionInput(
+                question = question,
+                value = localValue,
+                onValueChange = {
+                    localValue = it
+                }
+            )
+        },
+        modifier = modifier
+    )
 }
 
 @Preview(showBackground = true)
