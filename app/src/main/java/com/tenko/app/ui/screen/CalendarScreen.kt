@@ -1,6 +1,7 @@
 package com.tenko.app.ui.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,15 +9,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,11 +33,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -43,10 +52,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -59,13 +74,15 @@ import com.tenko.app.R
 import com.tenko.app.data.model.CalendarLegend
 import com.tenko.app.data.serializable.DailyLogCreate
 import com.tenko.app.data.serializable.DailyLogResponse
+import com.tenko.app.data.store.QuoteManager
 import com.tenko.app.data.view.CycleViewModel
 import com.tenko.app.ui.components.AppTopBar
+import com.tenko.app.ui.components.BottomCornerAsset
 import com.tenko.app.ui.components.BottomNavigationBar
 import com.tenko.app.ui.components.FloatingActionButton
 import com.tenko.app.ui.components.FloatingLegendSection
-import com.tenko.app.ui.components.MotivationalQuoteCard
 import com.tenko.app.ui.theme.RaisinBlack
+import com.tenko.app.ui.theme.SweetGrey
 import com.tenko.app.ui.theme.Tekhelet
 import com.tenko.app.ui.theme.White
 import kotlinx.coroutines.launch
@@ -76,32 +93,32 @@ import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
+val legends = listOf(
+    CalendarLegend(
+        id = "real_bleeding",
+        label = "Sangrado registrado",
+        color = Color(0xFFEE85B5),
+    ),
+    CalendarLegend(
+        id = "past_ovulation",
+        label = "Ovulación registrada",
+        color = Color(0xFF8E94F2),
+    ),
+    CalendarLegend(
+        id = "future_ovulation",
+        label = "Ovulación estimada",
+        color = Color(0xFFEE85B5).copy(alpha = 0.5f),
+    ),
+    CalendarLegend(
+        id = "future_bleeding",
+        label = "Periodo estimado",
+        color = Color(0xFF8E94F2).copy(alpha = 0.5f),
+    )
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = viewModel()) {
-    val legends = listOf(
-        CalendarLegend(
-            id = "real_bleeding",
-            label = "Sangrado registrado",
-            color = Color(0xFFFF6FAE),
-        ),
-        CalendarLegend(
-            id = "past_ovulation",
-            label = "Ovulación registrada",
-            color = Color(0xFF81D4FA),
-        ),
-        CalendarLegend(
-            id = "future_ovulation",
-            label = "Ovulación estimada",
-            color = Color(0xFF81D4FA).copy(alpha = 0.5f),
-        ),
-        CalendarLegend(
-            id = "future_bleeding",
-            label = "Periodo estimado",
-            color = Color(0xFFFF6FAE).copy(alpha = 0.5f),
-        )
-    )
-
     val currentMonth = remember { YearMonth.now() }
     val today = LocalDate.now()
     var selectedDate by remember { mutableStateOf(today) }
@@ -110,10 +127,15 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
     var showLegend by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var quote by remember { mutableStateOf("Cargando frase...") }
+
+    LaunchedEffect(Unit) {
+        scope.launch { quote = QuoteManager.getDailyQuote(context) }
+        viewModel.fetchData()
+    }
 
     val selectedDateLog = viewModel.dailyLogs.find { it.date == selectedDate }
-
-    LaunchedEffect(Unit) { viewModel.fetchData() }
 
     val state = rememberCalendarState(
         startMonth = currentMonth.minusMonths(12),
@@ -134,109 +156,171 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
         },
         bottomBar = { BottomNavigationBar(navController) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(30.dp))
-
-            MotivationalQuoteCard()
-
-            CalendarHeader(state)
-
-            HorizontalCalendar(
-                state = state,
-                dayContent = { day ->
-                    val date = day.date
-                    val isFutureDate = date.isAfter(today)
-                    val existingLog = viewModel.dailyLogs.find { it.date == date }
-
-                    val eventType = when {
-                        existingLog?.menstrual_flow != null && existingLog.menstrual_flow > 0 -> "real_bleeding"
-
-                        viewModel.cycles.any { cycle ->
-                            val start = cycle.start_date
-                            val end = cycle.end_date
-
-                            if (start != null && end != null) {
-                                val totalDays = ChronoUnit.DAYS.between(start, end)
-
-                                date == start.plusDays(totalDays / 2)
-                            } else false
-                        } -> "past_ovulation"
-
-                        viewModel.prediction?.let { pred ->
-                            val startDate =
-                                LocalDate.parse(
-                                    pred.predicted_cycle_range
-                                        .predicted_next_period
-                                        .toString()
-                                )
-
-                            val cycleLength = pred.predicted_cycle_range.predicted_length
-                            val futureOvulationDate = startDate.plusDays((cycleLength / 2).toLong())
-
-                            date == futureOvulationDate
-                        } == true -> "future_ovulation"
-
-                        viewModel.prediction?.let { pred ->
-                            val startDate =
-                                LocalDate.parse(
-                                    pred.predicted_cycle_range
-                                        .predicted_next_period
-                                        .toString()
-                                )
-
-                            val length = pred.predicted_cycle_range.predicted_length
-
-                            val bleedingDuration = when {
-                                length < 25 -> 4L
-                                length <= 32 -> 5L
-                                else -> 6L
-                            }
-
-                            val endDate = startDate.plusDays(bleedingDuration - 1)
-
-                            !date.isBefore(startDate) && !date.isAfter(endDate)
-                        } == true -> "future_bleeding"
-
-                        else -> null
-                    }
-
-                    // LÓGICA DE COLORES ACTUALIZADA
-                    val baseColor = when (eventType) {
-                        "real_bleeding" -> Color(0xFFFF6FAE)
-                        "past_ovulation" -> Color(0xFF81D4FA)
-                        "future_ovulation" -> Color(0xFF81D4FA)
-                        "future_bleeding" -> Color(0xFFFF6FAE)
-                        else -> Color.Transparent
-                    }
-
-                    val shouldHighlight = selectedLegend == null || selectedLegend == eventType
-
-                    val dayColor = when {
-                        baseColor == Color.Transparent -> Color.Transparent
-                        shouldHighlight -> baseColor
-                        else -> baseColor.copy(alpha = 0.15f)
-                    }
-
-                    DayCell(
-                        day = date,
-                        selected = date == selectedDate,
-                        hasEvent = existingLog != null,
-                        statusColor = dayColor,
-                        isClickable = !isFutureDate, // Bloqueo de días futuros
-                        onClick = {
-                            if (!isFutureDate) {
-                                selectedDate = date
-                                showSheet = true
-                            }
-                        }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painter = painterResource(R.drawable.orquideas_top_left_corner_byw),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .offset(x = (-50).dp, y = (-60).dp),
+                        alignment = Alignment.TopStart,
+                        contentScale = ContentScale.FillWidth,
+                        alpha = 0.4f
                     )
+
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 30.dp)
+                        ) {
+                            CalendarHeader(state)
+
+                            HorizontalCalendar(
+                                state = state,
+                                dayContent = { day ->
+                                    val date = day.date
+                                    val isFutureDate = date.isAfter(today)
+                                    val existingLog = viewModel.dailyLogs.find { it.date == date }
+
+                                    val eventType = when {
+                                        existingLog?.menstrual_flow != null && existingLog.menstrual_flow > 0 -> "real_bleeding"
+
+                                        viewModel.cycles.any { cycle ->
+                                            val start = cycle.start_date
+                                            val end = cycle.end_date
+
+                                            if (start != null && end != null) {
+                                                val totalDays = ChronoUnit.DAYS.between(start, end)
+
+                                                date == start.plusDays(totalDays / 2)
+                                            } else false
+                                        } -> "past_ovulation"
+
+                                        viewModel.prediction?.let { pred ->
+                                            val startDate =
+                                                LocalDate.parse(
+                                                    pred.predicted_cycle_range
+                                                        .predicted_next_period
+                                                        .toString()
+                                                )
+
+                                            val cycleLength =
+                                                pred.predicted_cycle_range.predicted_length
+                                            val futureOvulationDate =
+                                                startDate.plusDays((cycleLength / 2).toLong())
+
+                                            date == futureOvulationDate
+                                        } == true -> "future_ovulation"
+
+                                        viewModel.prediction?.let { pred ->
+                                            val startDate =
+                                                LocalDate.parse(
+                                                    pred.predicted_cycle_range
+                                                        .predicted_next_period
+                                                        .toString()
+                                                )
+
+                                            val length = pred.predicted_cycle_range.predicted_length
+
+                                            val bleedingDuration = when {
+                                                length < 25 -> 4L
+                                                length <= 32 -> 5L
+                                                else -> 6L
+                                            }
+
+                                            val endDate = startDate.plusDays(bleedingDuration - 1)
+
+                                            !date.isBefore(startDate) && !date.isAfter(endDate)
+                                        } == true -> "future_bleeding"
+
+                                        else -> null
+                                    }
+
+                                    // LÓGICA DE COLORES ACTUALIZADA
+                                    val baseColor = when (eventType) {
+                                        "real_bleeding" -> legends.indexOfFirst { it.id == eventType }
+                                            .takeIf { it != -1 }?.let { legends[it].color }
+
+                                        "past_ovulation" -> legends.indexOfFirst { it.id == eventType }
+                                            .takeIf { it != -1 }?.let { legends[it].color }
+
+                                        "future_ovulation" -> legends.indexOfFirst { it.id == eventType }
+                                            .takeIf { it != -1 }?.let { legends[it].color }
+
+                                        "future_bleeding" -> legends.indexOfFirst { it.id == eventType }
+                                            .takeIf { it != -1 }?.let { legends[it].color }
+
+                                        else -> Color.Transparent
+                                    }
+
+                                    val shouldHighlight =
+                                        selectedLegend == null || selectedLegend == eventType
+
+                                    val dayColor = when {
+                                        baseColor == Color.Transparent -> Color.Transparent
+                                        shouldHighlight -> baseColor
+                                        else -> baseColor!!.copy(alpha = 0.15f)
+                                    }
+
+                                    DayCell(
+                                        day = date,
+                                        selected = date == selectedDate,
+                                        hasEvent = existingLog != null,
+                                        statusColor = dayColor!!,
+                                        isClickable = !isFutureDate, // Bloqueo de días futuros
+                                        onClick = {
+                                            if (!isFutureDate) {
+                                                selectedDate = date
+                                                showSheet = true
+                                            }
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
                 }
-            )
+
+                Text(
+                    text = "*Toca un día para registrar o editar tu información",
+                    modifier = Modifier.fillMaxWidth(),
+                    color = SweetGrey,
+                    fontSize = 14.sp,
+                    fontStyle = FontStyle.Italic,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = "\"$quote\"",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(20.dp),
+                    color = RaisinBlack,
+                    fontSize = 20.sp,
+                    fontStyle = FontStyle.Italic,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                BottomCornerAsset()
+            }
 
             FloatingLegendSection(
                 legends = legends,
@@ -253,16 +337,14 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
                     }
                 },
                 onLegendSelected = { legendId ->
-                    selectedLegend =
-                        if (selectedLegend == legendId)
-                            null
-                        else
-                            legendId
-                }
+                    selectedLegend = if (selectedLegend == legendId) null else legendId
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(bottom = 16.dp)
             )
-
-            Spacer(modifier = Modifier.height(30.dp))
         }
+
 
         if (showSheet) {
             DailyLogFormSheet(
