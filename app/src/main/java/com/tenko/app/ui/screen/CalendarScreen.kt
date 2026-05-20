@@ -326,16 +326,7 @@ fun CalendarScreen(navController: NavController, viewModel: CycleViewModel = vie
                 legends = legends,
                 selectedLegend = selectedLegend,
                 showLegend = showLegend,
-                onToggleLegend = {
-                    showLegend = !showLegend
-                    scope.launch {
-                        if (showLegend) {
-                            scrollState.animateScrollTo(scrollState.maxValue)
-                        } else {
-                            scrollState.animateScrollTo(0)
-                        }
-                    }
-                },
+                onToggleLegend = { showLegend = !showLegend },
                 onLegendSelected = { legendId ->
                     selectedLegend = if (selectedLegend == legendId) null else legendId
                 },
